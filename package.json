@@ -1,0 +1,24 @@
+{
+  "name": "jumperserver",
+  "version": "1.0.0",
+  "description": "Part of hardware project",
+  "main": "main.js",
+  "dependencies": {},
+  "devDependencies": {
+    "electron-prebuilt": "^1.4.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dehimer/jumperserver.git"
+  },
+  "author": "Denis Novikov (dehimer)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dehimer/jumperserver/issues"
+  },
+  "homepage": "https://github.com/dehimer/jumperserver#readme"
+}
