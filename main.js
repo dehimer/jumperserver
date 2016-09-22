@@ -1,49 +1,70 @@
-const {app, BrowserWindow} = require('electron')
+'use strict';
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let win
+var app = require('app');
+var BrowserWindow = require('browser-window');
+var globalShortcut = require('global-shortcut');
+var configuration = require('./configuration');
+var ipc = require('ipc');
 
-function createWindow () {
-  // Create the browser window.
-  win = new BrowserWindow({width: 800, height: 600})
+var mainWindow = null;
+var settingsWindow = null;
 
-  // and load the index.html of the app.
-  win.loadURL(`file://${__dirname}/index.html`)
+app.on('ready', function() {
 
-  // Open the DevTools.
-  // win.webContents.openDevTools()
+    let clients = configuration.readSettings('clients');
 
-  // Emitted when the window is closed.
-  win.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    win = null
-  })
-}
+    if (!clients) {
+        configuration.saveSettings('clients', []);
+    }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow)
+    mainWindow = new BrowserWindow({
+        frame: false,
+        height: 500,
+        resizable: false,
+        width: 600
+    });
 
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+    mainWindow.loadUrl('file://' + __dirname + '/app/index.html');
 
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (win === null) {
-    createWindow()
-  }
-})
+});
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+ipc.on('close-main-window', function () {
+    app.quit();
+});
+
+ipc.on('open-settings-window', function () {
+    if (settingsWindow) {
+        return;
+    }
+
+    settingsWindow = new BrowserWindow({
+        frame: false,
+        height: 120,
+        resizable: false,
+        width: 230
+    });
+
+    settingsWindow.loadUrl('file://' + __dirname + '/app/settings.html');
+
+    settingsWindow.on('closed', function () {
+        settingsWindow = null;
+    });
+});
+
+ipc.on('close-settings-window', function () {
+    if (settingsWindow) {
+        settingsWindow.close();
+    }
+});
+
+ipc.on('add-client', function () {
+
+    let clients = configuration.readSettings('clients') || [];
+    clients.push({
+        id: void 0,
+        online: false,
+        ip: void 0
+    });
+    configuration.saveSettings('clients', clients);
+
+});
