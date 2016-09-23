@@ -5,12 +5,13 @@ var configuration = require('../configuration');
 
 var clientsCountInput = document.querySelector('#clients-count');
 var closeEl = document.querySelector('.close');
-var addClient = document.querySelector('#add-client');
+var addClient = document.querySelector('#reset-clients');
 
 closeEl.addEventListener('click', function (e) {
-    ipc.send('close-settings-window');
+    ipc.send('settings-window:close');
 });
 
 addClient.addEventListener('click', function (e) {
-    ipc.send('add-client');
+    ipc.send('reset-clients');
+    ipc.send('settings-window:close');
 });
