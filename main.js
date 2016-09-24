@@ -23,6 +23,13 @@ app.on('ready', function() {
     });
 
     mainWindow.loadUrl('file://' + __dirname + '/app/index.html');
+
+    mainWindow.on('closed', function () {
+        if (settingsWindow) {
+	        settingsWindow.close();
+        	settingsWindow = null;
+	    }
+    });
     
 });
 
@@ -37,9 +44,9 @@ ipc.on('settings-window:open', function () {
 
     settingsWindow = new BrowserWindow({
         frame: false,
-        height: 120,
+        height: 260,
+        width: 230,
         resizable: false,
-        width: 230
     });
 
     settingsWindow.loadUrl('file://' + __dirname + '/app/settings.html');

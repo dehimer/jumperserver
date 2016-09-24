@@ -23,6 +23,7 @@ input {
     padding: 10px;
 }
 
+#accept-params,
 #reset-clients{
     margin-top: 15px;
     width: 100%;
