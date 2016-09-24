@@ -1,6 +1,5 @@
 'use strict';
-
-var _ = require('underscore'); 
+ 
 var app = require('app');
 var BrowserWindow = require('browser-window');
 var configuration = require('./configuration');
@@ -65,6 +64,7 @@ ipc.on('reset-clients', function () {
 
 ipc.on('main-window:new-client-state', function (event, state) {
 	if(state.pos){
+		console.log(state.id);
 		clients[state.id].pos = state.pos;
 		configuration.saveSettings('clients', clients);
 	}
@@ -80,13 +80,8 @@ function onMainWindowRendered () {
 	if(!mainWindow){
 		return;
 	}
-
-	var clientsAr = _.map(clients, function(val, id){
-		val.id = id;
-		return val;
-	});
     
-    mainWindow.webContents.send('main-window:clients', clientsAr);
+    mainWindow.webContents.send('main-window:clients', clients);
 }
 
 
@@ -115,27 +110,23 @@ server.on('message', function (data, remote) {
 
 	var clientExist = !!clients[id];
 	if(!clientExist){
-		clients[id] = {};
+		clients[id] = {
+			id:id
+		};
 	}
 
 	clients[id].val = val;
 	clients[id].ip = ip;
 	clients[id].lastdgram = currDate;
 
+
 	if(!clientExist){
 		configuration.saveSettings('clients', clients);
-		var clientsAr = _.map(clients, function(val, id){
-			val.id = id;
-			return val;
-		});
-		console.log('clientsAr');
-		console.log(clientsAr);
-
-		mainWindow.webContents.send('main-window:clients', clientsAr);
+		mainWindow.webContents.send('main-window:clients', clients);
 	}
 
 	console.log(clients[id]);
-	 
+	mainWindow.webContents.send('main-window:update-clients', clients[id]);
 
 });
 

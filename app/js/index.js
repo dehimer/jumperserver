@@ -1,7 +1,8 @@
 'use strict';
 
-var ipc = require('ipc');
+var _ = require('underscore');
 var $ = require('jquery');
+var ipc = require('ipc');
 
 var closeEl = $('.close');
 var settingsEl = $('.settings');
@@ -48,6 +49,8 @@ clientsCount.els.input.bind('keydown', function (e) {
 
 
 ipc.on('main-window:clients', renderClients);
+ipc.on('main-window:update-clients', updateClient);
+
 
 
 ipc.send('main-window:ready');
@@ -69,22 +72,34 @@ function keyhandler(pressed){
 }
 
 var clientsContentEl = clientsEl.find('.clients__content');
-function renderClients(clientsAr){
+var clients = {};
+function renderClients(data){
+
+    clients = data;
+
+    var clientsAr = _.map(clients, function(val, id){
+        return val;
+    });
+
+    console.log(clientsAr);
+
     var clientsCount = clientsAr.length;
     
     var markup = '';
 
-
     for(var idx=0;idx<clientsCount;idx++){
         var client = clientsAr[idx];
+        console.log(client);
         var pos = client.pos;
         if(!pos){
             pos = [window.innerWidth/2-25, window.innerHeight/2-25]
         }
         // console.log(pos);
-        markup += '<div class="clients__client" data-idx="'+idx+'" style="left:'+pos[0]+'px;top:'+pos[1]+'px;">';
+        // alert(idx+':'+client.id);
+        markup += '<div class="clients__client" data-idx="'+idx+'" data-id="'+client.id+'" style="left:'+pos[0]+'px;top:'+pos[1]+'px;">';
             markup += '<div class="clients__client_id">'+client.id+'</div>';
             markup += '<div class="clients__client_ip">'+client.ip+'</div>';
+            markup += '<div class="clients__client_val">'+client.val+'</div>';
         markup += '</div>';
     }
 
@@ -92,9 +107,14 @@ function renderClients(clientsAr){
     clientsContentEl.find('.clients__client').bind('mousedown', function (e) {
 
         var el = $(e.target);
-        var idx = el.data('idx');
+        
+        if(!el.hasClass('clients__client')){
+            el = el.closest('.clients__client');
+        }
 
-        // alert(shiftHolded);
+        var idx = el.data('idx');
+        var id = el.data('id');
+
         if(shiftHolded){
             var currPos = [el.offset().left, el.offset().top];
             var startMousePos = [e.pageX, e.pageY];
@@ -116,15 +136,27 @@ function renderClients(clientsAr){
                 clientsContentEl.unbind('mousemove');
                 // $(e.target).css('background-color', 'white');
 
-                ipc.send('main-window:new-client-state', {id:clients[idx].id, pos:newPos})
+                ipc.send('main-window:new-client-state', {id:id, pos:newPos})
             });
         }else{
-            var lastColor = el.css('background-color');
-            el.css('background-color', 'white');
+            el.addClass('clients__client--clicked');
             clientsContentEl.bind('mouseup', function(){
                 clientsContentEl.unbind('mouseup');
-                $(e.target).css('background-color', lastColor);
+                el.removeClass('clients__client--clicked');
             });
         }
     })
+}
+
+function updateClient(client){
+    var clientEl = clientsContentEl.find('.clients__client[data-id="'+client.id+'"]');
+    clients[client.id].online = true;
+    clearTimeout(clients[client.id].offlineTimer);
+    clients[client.id].offlineTimer = setTimeout(function(){
+        clients[client.id].online = false;
+        clientEl.removeClass('clients__client--online');
+    }, 3000);
+    clientEl.addClass('clients__client--online');
+    clientEl.find('.clients__client_ip').html(client.ip);
+    clientEl.find('.clients__client_val').html(client.val);
 }

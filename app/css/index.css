@@ -97,6 +97,15 @@ body {
     height: 50px;
     border-radius: 50%;
     background-color: #aaa;
+    text-align: center;
+    color: white;
+}
+
+.clients__client--online {
+    background-color: #5e0;
+}
+.clients__client--clicked {
+    background-color: white;
 }
 
 .clients__client_id {
@@ -109,4 +118,8 @@ body {
 .clients__client_ip {
     margin-top: -70px;
     margin-left: -5px;
+}
+
+.clients__client_val {
+    margin-top: 55px;
 }
