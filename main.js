@@ -2,7 +2,6 @@
 
 var app = require('app');
 var BrowserWindow = require('browser-window');
-var globalShortcut = require('global-shortcut');
 var configuration = require('./configuration');
 var ipc = require('ipc');
 
@@ -101,3 +100,23 @@ function onMainWindowRendered () {
     
     mainWindow.webContents.send('main-window:clients', clients);
 }
+
+
+/* UDP part*/
+var PORT = 3000;
+var HOST = '127.0.0.1';
+
+var dgram = require('dgram');
+var server = dgram.createSocket('udp4');
+
+server.on('listening', function () {
+    var address = server.address();
+    console.log('UDP Server listening on ' + address.address + ":" + address.port);
+});
+
+server.on('message', function (message, remote) {
+    console.log(remote.address + ':' + remote.port +' - ' + message);
+
+});
+
+server.bind(PORT, HOST);
