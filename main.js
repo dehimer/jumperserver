@@ -1,5 +1,6 @@
 'use strict';
 
+var _ = require('underscore'); 
 var app = require('app');
 var BrowserWindow = require('browser-window');
 var configuration = require('./configuration');
@@ -8,7 +9,7 @@ var ipc = require('ipc');
 var mainWindow = null;
 var settingsWindow = null;
 
-var clients = configuration.readSettings('clients') || [];
+var clients = configuration.readSettings('clients') || {};
 const mainWindowSizes = [500,600];
 
 app.on('ready', function() {
@@ -57,36 +58,18 @@ ipc.on('settings-window:close', function () {
 
 
 ipc.on('reset-clients', function () {
-	clients = [];
+	clients = {};
     configuration.saveSettings('clients', clients);
     mainWindow.webContents.send('main-window:clients', clients);
 });
 
 ipc.on('main-window:new-client-state', function (event, state) {
 	if(state.pos){
-		clients[state.idx].pos = state.pos;
+		clients[state.id].pos = state.pos;
 		configuration.saveSettings('clients', clients);
 	}
 });
 
-
-ipc.on('main-window:set-clients-count', function (event, clientsCount) {
-	
-	clients = [];
-	var lastpos = [];
-	for(var i=0;i<clientsCount;i++){
-
-		clients.push({
-			id:i,
-			ip:''
-		});
-
-	}
-	console.log(clients);
-	configuration.saveSettings('clients', clients)
-	mainWindow.webContents.send('main-window:clients', clients);
-
-});
 
 ipc.on('main-window:ready', function (event, args) {
 	onMainWindowRendered();
@@ -97,8 +80,13 @@ function onMainWindowRendered () {
 	if(!mainWindow){
 		return;
 	}
+
+	var clientsAr = _.map(clients, function(val, id){
+		val.id = id;
+		return val;
+	});
     
-    mainWindow.webContents.send('main-window:clients', clients);
+    mainWindow.webContents.send('main-window:clients', clientsAr);
 }
 
 
@@ -114,8 +102,40 @@ server.on('listening', function () {
     console.log('UDP Server listening on ' + address.address + ":" + address.port);
 });
 
-server.on('message', function (message, remote) {
-    console.log(remote.address + ':' + remote.port +' - ' + message);
+server.on('message', function (data, remote) {
+
+	var ip = remote.address;
+	// console.log(data+'');
+	
+	var data = (data+'').split(' ');
+	var id = data[0];
+	var val = data[1];
+
+	var currDate = +(new Date());
+
+	var clientExist = !!clients[id];
+	if(!clientExist){
+		clients[id] = {};
+	}
+
+	clients[id].val = val;
+	clients[id].ip = ip;
+	clients[id].lastdgram = currDate;
+
+	if(!clientExist){
+		configuration.saveSettings('clients', clients);
+		var clientsAr = _.map(clients, function(val, id){
+			val.id = id;
+			return val;
+		});
+		console.log('clientsAr');
+		console.log(clientsAr);
+
+		mainWindow.webContents.send('main-window:clients', clientsAr);
+	}
+
+	console.log(clients[id]);
+	 
 
 });
 

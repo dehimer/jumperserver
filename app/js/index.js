@@ -45,24 +45,9 @@ clientsCount.els.input.bind('keydown', function (e) {
     }
 });
 
-/* send */
-clientsCount.els.submit.bind('click', function () {
-    const value = clientsCount.els.input.val();
-    ipc.send('main-window:set-clients-count', value);
-});
 
 
-
-ipc.on('main-window:clients', function (clients){
-    const clientsReady = (Array.isArray(clients) && clients.length > 0);
-    clientsCountEl.toggleClass('clients-count--disabled', clientsReady)
-    clientsEl.toggleClass('clients-count--disabled', !clientsReady);
-
-    if(clientsReady){
-        renderClients(clients);
-    }
-});
-
+ipc.on('main-window:clients', renderClients);
 
 
 ipc.send('main-window:ready');
@@ -84,22 +69,23 @@ function keyhandler(pressed){
 }
 
 var clientsContentEl = clientsEl.find('.clients__content');
-function renderClients(clients){
-    var clientsCount = clients.length;
+function renderClients(clientsAr){
+    var clientsCount = clientsAr.length;
     
     var markup = '';
 
 
     for(var idx=0;idx<clientsCount;idx++){
-        var client = clients[idx];
+        var client = clientsAr[idx];
         var pos = client.pos;
         if(!pos){
             pos = [window.innerWidth/2-25, window.innerHeight/2-25]
         }
         // console.log(pos);
         markup += '<div class="clients__client" data-idx="'+idx+'" style="left:'+pos[0]+'px;top:'+pos[1]+'px;">';
+            markup += '<div class="clients__client_id">'+client.id+'</div>';
+            markup += '<div class="clients__client_ip">'+client.ip+'</div>';
         markup += '</div>';
-        
     }
 
     clientsContentEl.html(markup);
@@ -130,7 +116,7 @@ function renderClients(clients){
                 clientsContentEl.unbind('mousemove');
                 // $(e.target).css('background-color', 'white');
 
-                ipc.send('main-window:new-client-state', {idx:idx, pos:newPos})
+                ipc.send('main-window:new-client-state', {id:clients[idx].id, pos:newPos})
             });
         }else{
             var lastColor = el.css('background-color');
