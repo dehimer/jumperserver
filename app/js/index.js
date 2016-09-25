@@ -104,9 +104,11 @@ function renderClients(event, data){
         // console.log(pos);
         // alert(idx+':'+client.id);
         markup += '<div class="clients__client" data-idx="'+idx+'" data-id="'+client.id+'" style="left:'+pos[0]+'px;top:'+pos[1]+'px;">';
-            markup += '<div class="clients__client_id">'+client.id+'</div>';
-            markup += '<div class="clients__client_ip">'+client.ip+'</div>';
-            markup += '<div class="clients__client_val">'+client.val+'</div>';
+            markup += '<div class="clients__client-color">';
+                markup += '<div class="clients__client_id">'+client.id+'</div>';
+                markup += '<div class="clients__client_ip">'+client.ip+'</div>';
+                markup += '<div class="clients__client_val">'+client.val+'</div>';
+            markup += '</div>';
         markup += '</div>';
     }
 
@@ -146,10 +148,12 @@ function renderClients(event, data){
                 ipc.send('main-window:new-client-state', {id:id, pos:newPos})
             });
         }else{
-            el.addClass('clients__client--active');
+            // el.addClass('clients__client--active');
+            ipc.send('main-window:new-client-state', {id:id, manualtrigger:true});
             clientsContentEl.bind('mouseup mouseout', function(){
                 clientsContentEl.unbind('mouseup');
-                el.removeClass('clients__client--active');
+                ipc.send('main-window:new-client-state', {id:id, manualtrigger:false});
+                // el.removeClass('clients__client--active');
             });
         }
     })
@@ -169,6 +173,10 @@ function updateClient(event, client){
         clientEl.addClass('clients__client--active');
     }else{
         clientEl.removeClass('clients__client--active');
+    }
+
+    if(client.color) {
+        clientEl.find('.clients__client-color').css('background-color', client.color)
     }
     
 

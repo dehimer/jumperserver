@@ -1,4 +1,6 @@
 'use strict';
+
+var _ = require('underscore');
  
 var configuration = require('./configuration');
 var electron = require('electron')
@@ -11,6 +13,14 @@ var settingsWindow = null;
 
 var params = configuration.readSettings('params') || {offlinetimeout:3000,triggerlevel:3};
 var clients = configuration.readSettings('clients') || {};
+//reset clients
+_.each(clients, function(client, id){
+	delete clients[id].online;
+	delete clients[id].color;
+	delete clients[id].manualtrigger
+});
+
+
 const mainWindowSizes = [500,600];
 
 app.on('ready', function() {
@@ -73,7 +83,7 @@ ipc.on('settings-window:ready', function () {
 });
 
 ipc.on('settings-window:params', function (event, newParams) {
-	params = newParams
+	params = newParams;
 	configuration.saveSettings('params', params);
 	mainWindow.webContents.send('main-window:params', params);
 });
@@ -91,7 +101,11 @@ ipc.on('main-window:new-client-state', function (event, state) {
 		clients[state.id].pos = state.pos;
 		configuration.saveSettings('clients', clients);
 	}
+	if(typeof state.manualtrigger !== 'undefined'){
+		clients[state.id].manualtrigger = state.manualtrigger;
+	}
 });
+
 
 
 ipc.on('main-window:ready', function (event, args) {
@@ -144,7 +158,7 @@ server.on('message', function (data, remote) {
 	}
 
 	//update state
-	clients[id].trigger = trigger;
+	clients[id].trigger = trigger || clients[id].manualtrigger;
 	clients[id].val = val;
 	clients[id].ip = ip;
 	clients[id].lastdgram = currDate;
@@ -158,7 +172,7 @@ server.on('message', function (data, remote) {
 	}
 
 	//send new state
-	mainWindow.webContents.send('main-window:update-clients', clients[id]);
+	mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[id]);
 
 
 	//check offline
@@ -168,7 +182,7 @@ server.on('message', function (data, remote) {
     clearTimeout(offlineTimeouts[id]);
     offlineTimeouts[id] = setTimeout(function(){
         clients[id].online = false;
-        mainWindow.webContents.send('main-window:update-clients', clients[id]);
+        mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[id]);
     }, params.offlinetimeout);
 
 });
@@ -180,13 +194,14 @@ var hue = 0;
 var currentColor = genColor(hue);
 setInterval(function(){
 	console.log(hue);
-	hue = (hue+2)%360;
+	hue = (hue+10)%360;
 	currentColor = genColor(hue);
-}, 200);
+	sendColor(currentColor);
+}, 100);
 
 
 function genColor(h){
-	HSVtoRGB(h/360, 0.5, 0.5)
+	return HSVtoRGB(h/360, 1, 1);
 }
 
 /* accepts parameters
@@ -217,4 +232,25 @@ function HSVtoRGB(h, s, v) {
         g: Math.round(g * 255),
         b: Math.round(b * 255)
     };
+}
+
+
+function sendColor(color, clientId){
+
+	var targetClients = _.filter(clients, function(client){
+		return client.online && ((typeof clientId === 'undefined') || client.id === clientId);
+	});
+
+	color = color;
+    color = [color.r, color.g, color.b].join(',');
+    color = 'rgb('+color+')';
+
+	//indicate color
+	_.each(targetClients, function(client){
+		var colorToSend = client.trigger?'white':color; 
+		clients[client.id].color = colorToSend;
+		console.log(color);
+		mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[client.id]);
+	})
+	console.log(targetClients);
 }
