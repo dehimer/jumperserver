@@ -193,7 +193,7 @@ server.bind(PORT, HOST);
 var hue = 0;
 var currentColor = genColor(hue);
 setInterval(function(){
-	console.log(hue);
+	// console.log(hue);
 	hue = (hue+10)%360;
 	currentColor = genColor(hue);
 	sendColor(currentColor);
@@ -234,23 +234,62 @@ function HSVtoRGB(h, s, v) {
     };
 }
 
-
+var e131clients = {};
 function sendColor(color, clientId){
 
 	var targetClients = _.filter(clients, function(client){
 		return client.online && ((typeof clientId === 'undefined') || client.id === clientId);
 	});
 
-	color = color;
-    color = [color.r, color.g, color.b].join(',');
-    color = 'rgb('+color+')';
+	color = [color.r, color.g, color.b];
 
 	//indicate color
 	_.each(targetClients, function(client){
-		var colorToSend = client.trigger?'white':color; 
+		var colorToSend = client.trigger?[255,255,255]:color; 
 		clients[client.id].color = colorToSend;
-		console.log(color);
+		// console.log(color);
 		mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[client.id]);
-	})
-	console.log(targetClients);
+	
+		if(!e131clients[client.id]){
+			e131clients[client.id] = createClientChannel(client.ip, client.id);
+		}
+
+		e131clients[client.id](clients[client.id].color)
+	});
+}
+
+
+
+function createClientChannel (ip, id) {
+
+ 	var universe_big = (createUniverseClient)(120, ip, id*2-1);
+ 	var universe_small = (createUniverseClient)(60, ip, id*2);
+
+ 	return function(rgbcolor){
+ 		universe_big(rgbcolor);
+ 		universe_small(rgbcolor);
+ 	}
+}
+
+function createUniverseClient (size, ip, universeId) {
+
+	console.log('createUniverseClient: '+universeId);
+	var e131 = require('e131');
+	var client = new e131.Client(ip);  // or use a universe 
+	var packet = client.createPacket(size*3);
+	var channelData = packet.getChannelData();
+	packet.setSourceName('E1.31 client '+universeId);
+	packet.setUniverse(universeId);
+
+	return function fillAndSend (rgbcolor) {
+		console.log(universeId+'<'+rgbcolor);
+		for (var idx=0; idx<size; idx++) {
+			_.each(rgbcolor, function(color, colorindex){
+				channelData[idx*3+colorindex] = rgbcolor[colorindex];
+			});
+		}
+		client.send(packet, function () {
+			console.log('success sent to '+universeId);
+		});
+	} 
 }
