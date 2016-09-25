@@ -2,7 +2,8 @@
 
 var _ = require('underscore');
 var $ = require('jquery');
-var ipc = require('ipc');
+var electron = require('electron')
+var ipc = electron.ipcRenderer;
 
 var closeEl = $('.close');
 var settingsEl = $('.settings');
@@ -48,7 +49,7 @@ clientsCount.els.input.bind('keydown', function (e) {
 
 
 var params = {offlinetimeout:3000};
-ipc.on('main-window:params', function(newParams){
+ipc.on('main-window:params', function(event, newParams){
     params = newParams;
 });
 ipc.on('main-window:clients', renderClients);
@@ -76,7 +77,7 @@ function keyhandler(pressed){
 
 var clientsContentEl = clientsEl.find('.clients__content');
 var clients = {};
-function renderClients(data){
+function renderClients(event, data){
 
     clients = data;
 
@@ -151,7 +152,7 @@ function renderClients(data){
     })
 }
 
-function updateClient(client){
+function updateClient(event, client){
     var clientEl = clientsContentEl.find('.clients__client[data-id="'+client.id+'"]');
     
     clients[client.id].online = true;

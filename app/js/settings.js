@@ -1,6 +1,7 @@
 'use strict';
 
-var ipc = require('ipc');
+var electron = require('electron')
+var ipc = electron.ipcRenderer;
 var $ = require('jquery');
 var configuration = require('../configuration');
 
@@ -35,7 +36,7 @@ acceptParamsEl.bind('click', function (e) {
 
 ipc.send('settings-window:ready');
 
-ipc.on('settings-window:params', function(params){
+ipc.on('settings-window:params', function(event, params){
 	triggerlevelEl.val(params.triggerlevel);
 	offlinetimeoutEl.val(params.offlinetimeout);
 });

@@ -1,9 +1,10 @@
 'use strict';
  
-var app = require('app');
-var BrowserWindow = require('browser-window');
 var configuration = require('./configuration');
-var ipc = require('ipc');
+var electron = require('electron')
+var app = electron.app;
+var BrowserWindow = electron.BrowserWindow;
+var ipc = electron.ipcMain;
 
 var mainWindow = null;
 var settingsWindow = null;
@@ -23,9 +24,10 @@ app.on('ready', function() {
         // resizable: false,
     });
 
-    mainWindow.loadUrl('file://' + __dirname + '/app/index.html');
+    mainWindow.loadURL('file://' + __dirname + '/app/index.html');
 
     mainWindow.on('closed', function () {
+    	mainWindow = null;
         if (settingsWindow) {
 	        settingsWindow.close();
         	settingsWindow = null;
@@ -51,7 +53,7 @@ ipc.on('settings-window:open', function () {
         resizable: false,
     });
 
-    settingsWindow.loadUrl('file://' + __dirname + '/app/settings.html');
+    settingsWindow.loadURL('file://' + __dirname + '/app/settings.html');
 
     settingsWindow.on('closed', function () {
         settingsWindow = null;
@@ -119,6 +121,8 @@ server.on('listening', function () {
     console.log('UDP Server listening on ' + address.address + ":" + address.port);
 });
 
+
+
 server.on('message', function (data, remote) {
 
 	var ip = remote.address;
@@ -157,3 +161,47 @@ server.on('message', function (data, remote) {
 });
 
 server.bind(PORT, HOST);
+
+
+var hue = 0;
+var currentColor = genColor(hue);
+setInterval(function(){
+	console.log(hue);
+	hue = (hue+2)%360;
+	currentColor = genColor(hue);
+}, 200);
+
+
+function genColor(h){
+	HSVtoRGB(h/360, 0.5, 0.5)
+}
+
+/* accepts parameters
+ * h  Object = {h:x, s:y, v:z}
+ * OR 
+ * h, s, v
+*/
+function HSVtoRGB(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+    };
+}
