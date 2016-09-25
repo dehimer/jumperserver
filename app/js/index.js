@@ -47,7 +47,10 @@ clientsCount.els.input.bind('keydown', function (e) {
 });
 
 
-
+var params = {offlinetimeout:3000};
+ipc.on('main-window:params', function(newParams){
+    params = newParams;
+});
 ipc.on('main-window:clients', renderClients);
 ipc.on('main-window:update-clients', updateClient);
 
@@ -131,7 +134,7 @@ function renderClients(data){
             
             // el.css('background-color', 'red');
 
-            clientsContentEl.bind('mouseup', function(){
+            clientsContentEl.bind('mouseup mouseout', function(){
                 clientsContentEl.unbind('mouseup');
                 clientsContentEl.unbind('mousemove');
                 // $(e.target).css('background-color', 'white');
@@ -139,10 +142,10 @@ function renderClients(data){
                 ipc.send('main-window:new-client-state', {id:id, pos:newPos})
             });
         }else{
-            el.addClass('clients__client--clicked');
-            clientsContentEl.bind('mouseup', function(){
+            el.addClass('clients__client--active');
+            clientsContentEl.bind('mouseup mouseout', function(){
                 clientsContentEl.unbind('mouseup');
-                el.removeClass('clients__client--clicked');
+                el.removeClass('clients__client--active');
             });
         }
     })
@@ -150,13 +153,22 @@ function renderClients(data){
 
 function updateClient(client){
     var clientEl = clientsContentEl.find('.clients__client[data-id="'+client.id+'"]');
+    
     clients[client.id].online = true;
     clearTimeout(clients[client.id].offlineTimer);
     clients[client.id].offlineTimer = setTimeout(function(){
         clients[client.id].online = false;
         clientEl.removeClass('clients__client--online');
-    }, 3000);
+    }, params.offlinetimeout);
     clientEl.addClass('clients__client--online');
+    
+    if(client.trigger){
+        clientEl.addClass('clients__client--active');
+    }else{
+        clientEl.removeClass('clients__client--active');
+    }
+    
+
     clientEl.find('.clients__client_ip').html(client.ip);
     clientEl.find('.clients__client_val').html(client.val);
 }

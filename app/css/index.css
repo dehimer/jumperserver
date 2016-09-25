@@ -104,7 +104,7 @@ body {
 .clients__client--online {
     background-color: #5e0;
 }
-.clients__client--clicked {
+.clients__client--active {
     background-color: white;
 }
 

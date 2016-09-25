@@ -8,6 +8,7 @@ var ipc = require('ipc');
 var mainWindow = null;
 var settingsWindow = null;
 
+var params = configuration.readSettings('params') || {offlinetimeout:3000,triggerlevel:3};
 var clients = configuration.readSettings('clients') || {};
 const mainWindowSizes = [500,600];
 
@@ -38,13 +39,14 @@ ipc.on('main-window:close', function () {
 });
 
 ipc.on('settings-window:open', function () {
+
     if (settingsWindow) {
         return;
     }
 
     settingsWindow = new BrowserWindow({
         frame: false,
-        height: 260,
+        height: 280,
         width: 230,
         resizable: false,
     });
@@ -54,12 +56,24 @@ ipc.on('settings-window:open', function () {
     settingsWindow.on('closed', function () {
         settingsWindow = null;
     });
+
 });
 
 ipc.on('settings-window:close', function () {
     if (settingsWindow) {
         settingsWindow.close();
     }
+});
+
+
+ipc.on('settings-window:ready', function () {
+	settingsWindow.webContents.send('settings-window:params', params);
+});
+
+ipc.on('settings-window:params', function (event, newParams) {
+	params = newParams
+	configuration.saveSettings('params', params);
+	mainWindow.webContents.send('main-window:params', params);
 });
 
 
@@ -87,7 +101,8 @@ function onMainWindowRendered () {
 	if(!mainWindow){
 		return;
 	}
-    
+	
+	mainWindow.webContents.send('main-window:params', params);
     mainWindow.webContents.send('main-window:clients', clients);
 }
 
@@ -111,7 +126,9 @@ server.on('message', function (data, remote) {
 	
 	var data = (data+'').split(' ');
 	var id = data[0];
-	var val = data[1];
+	var val = data[1]*1;
+
+	var trigger = val > params.triggerlevel;
 
 	var currDate = +(new Date());
 
@@ -122,9 +139,11 @@ server.on('message', function (data, remote) {
 		};
 	}
 
+	clients[id].trigger = trigger;
 	clients[id].val = val;
 	clients[id].ip = ip;
 	clients[id].lastdgram = currDate;
+
 
 
 	if(!clientExist){
