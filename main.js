@@ -104,7 +104,7 @@ function onMainWindowRendered () {
 		return;
 	}
 	
-	mainWindow.webContents.send('main-window:params', params);
+	// mainWindow.webContents.send('main-window:params', params);
     mainWindow.webContents.send('main-window:clients', clients);
 }
 
@@ -122,41 +122,54 @@ server.on('listening', function () {
 });
 
 
-
+var offlineTimeouts = {};
 server.on('message', function (data, remote) {
 
 	var ip = remote.address;
-	// console.log(data+'');
 	
 	var data = (data+'').split(' ');
 	var id = data[0];
 	var val = data[1]*1;
 
 	var trigger = val > params.triggerlevel;
-
+	
 	var currDate = +(new Date());
-
 	var clientExist = !!clients[id];
+	
+	//create
 	if(!clientExist){
 		clients[id] = {
 			id:id
 		};
 	}
 
+	//update state
 	clients[id].trigger = trigger;
 	clients[id].val = val;
 	clients[id].ip = ip;
 	clients[id].lastdgram = currDate;
+	clients[id].online = true;
 
 
-
+	//save and notice window
 	if(!clientExist){
 		configuration.saveSettings('clients', clients);
 		mainWindow.webContents.send('main-window:clients', clients);
 	}
 
-	console.log(clients[id]);
+	//send new state
 	mainWindow.webContents.send('main-window:update-clients', clients[id]);
+
+
+	//check offline
+	if(!offlineTimeouts[id]){
+		offlineTimeouts[id] = {};
+	}
+    clearTimeout(offlineTimeouts[id]);
+    offlineTimeouts[id] = setTimeout(function(){
+        clients[id].online = false;
+        mainWindow.webContents.send('main-window:update-clients', clients[id]);
+    }, params.offlinetimeout);
 
 });
 

@@ -48,10 +48,13 @@ clientsCount.els.input.bind('keydown', function (e) {
 });
 
 
+/*
+//now not needed
 var params = {offlinetimeout:3000};
 ipc.on('main-window:params', function(event, newParams){
     params = newParams;
 });
+*/
 ipc.on('main-window:clients', renderClients);
 ipc.on('main-window:update-clients', updateClient);
 
@@ -153,15 +156,14 @@ function renderClients(event, data){
 }
 
 function updateClient(event, client){
-    var clientEl = clientsContentEl.find('.clients__client[data-id="'+client.id+'"]');
-    
-    clients[client.id].online = true;
-    clearTimeout(clients[client.id].offlineTimer);
-    clients[client.id].offlineTimer = setTimeout(function(){
-        clients[client.id].online = false;
+
+    var clientEl = clientsContentEl.find('.clients__client[data-id="'+client.id+'"]');    
+
+    if(client.online){
+        clientEl.addClass('clients__client--online');
+    }else{
         clientEl.removeClass('clients__client--online');
-    }, params.offlinetimeout);
-    clientEl.addClass('clients__client--online');
+    }
     
     if(client.trigger){
         clientEl.addClass('clients__client--active');
