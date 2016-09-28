@@ -176,7 +176,9 @@ function updateClient(event, client){
     }
 
     if(client.color) {
-        clientEl.find('.clients__client-color').css('background-color', 'rgb('+client.color.join(',')+')')
+        clientEl.find('.clients__client-color').css('background-color', 'rgb('+client.color.join(',')+')');
+    }else{
+        clientEl.find('.clients__client-color').css('background-color', 'transparent');
     }
     
 

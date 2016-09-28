@@ -1,12 +1,19 @@
 'use strict';
 
+//sugar libs
 var _ = require('underscore');
  
-var configuration = require('./configuration');
-var electron = require('electron')
+//electron libs
+var electron = require('electron');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipc = electron.ipcMain;
+
+//self written libs
+var configuration = require('./libs/configuration');
+var UdpServer = require('./libs/udpserver');
+var colorgenerator = require('./libs/colorgenerator');
+
 
 var mainWindow = null;
 var settingsWindow = null;
@@ -21,7 +28,7 @@ _.each(clients, function(client, id){
 });
 
 
-const mainWindowSizes = [500,600];
+const mainWindowSizes = [500, 600];
 
 app.on('ready', function() {
     console.log('ready');
@@ -122,117 +129,65 @@ function onMainWindowRendered () {
     mainWindow.webContents.send('main-window:clients', clients);
 }
 
-
-/* UDP part*/
-var PORT = 3000;
-var HOST = '127.0.0.1';
-
-var dgram = require('dgram');
-var server = dgram.createSocket('udp4');
-
-server.on('listening', function () {
-    var address = server.address();
-    console.log('UDP Server listening on ' + address.address + ":" + address.port);
-});
-
-
+console.log(UdpServer);
 var offlineTimeouts = {};
-server.on('message', function (data, remote) {
+var udpserver = UdpServer({
+	host:'127.0.0.1',
+	port:3000,
+	onmessage: function(args){
+		
+		var ip = args.ip;
+		var id = args.id;
+		var val = args.val;
 
-	var ip = remote.address;
-	
-	var data = (data+'').split(' ');
-	var id = data[0];
-	var val = data[1]*1;
 
-	var trigger = val > params.triggerlevel;
-	
-	var currDate = +(new Date());
-	var clientExist = !!clients[id];
-	
-	//create
-	if(!clientExist){
-		clients[id] = {
-			id:id
-		};
+		var trigger = val > params.triggerlevel;
+		var currDate = +(new Date());
+
+		var clientExist = !!clients[id];
+
+		//create
+		if(!clientExist){
+			clients[id] = {
+				id:id
+			};
+		}
+
+		//update state
+		clients[id].trigger = trigger || clients[id].manualtrigger;
+		clients[id].val = val;
+		clients[id].ip = ip;
+		clients[id].lastdgram = currDate;
+		clients[id].online = true;
+
+
+		//save and notice window
+		if(!clientExist){
+			configuration.saveSettings('clients', clients);
+			mainWindow.webContents.send('main-window:clients', clients);
+		}
+
+		//send new state
+		mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[id]);
+
+
+		//check offline
+		if(!offlineTimeouts[id]){
+			offlineTimeouts[id] = {};
+		}
+	    clearTimeout(offlineTimeouts[id]);
+	    offlineTimeouts[id] = setTimeout(function(){
+	        if(clients[id]){
+	        	clients[id].online = false;
+	        	delete clients[id].color;
+	        }
+	        mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[id]);
+	    }, params.offlinetimeout);
 	}
-
-	//update state
-	clients[id].trigger = trigger || clients[id].manualtrigger;
-	clients[id].val = val;
-	clients[id].ip = ip;
-	clients[id].lastdgram = currDate;
-	clients[id].online = true;
+})
 
 
-	//save and notice window
-	if(!clientExist){
-		configuration.saveSettings('clients', clients);
-		mainWindow.webContents.send('main-window:clients', clients);
-	}
-
-	//send new state
-	mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[id]);
-
-
-	//check offline
-	if(!offlineTimeouts[id]){
-		offlineTimeouts[id] = {};
-	}
-    clearTimeout(offlineTimeouts[id]);
-    offlineTimeouts[id] = setTimeout(function(){
-        clients[id].online = false;
-        mainWindow && mainWindow.webContents.send('main-window:update-clients', clients[id]);
-    }, params.offlinetimeout);
-
-});
-
-server.bind(PORT, HOST);
-
-
-var hue = 0;
-var currentColor = genColor(hue);
-setInterval(function(){
-	// console.log(hue);
-	hue = (hue+10)%360;
-	currentColor = genColor(hue);
-	sendColor(currentColor);
-}, 100);
-
-
-function genColor(h){
-	return HSVtoRGB(h/360, 1, 1);
-}
-
-/* accepts parameters
- * h  Object = {h:x, s:y, v:z}
- * OR 
- * h, s, v
-*/
-function HSVtoRGB(h, s, v) {
-    var r, g, b, i, f, p, q, t;
-    if (arguments.length === 1) {
-        s = h.s, v = h.v, h = h.h;
-    }
-    i = Math.floor(h * 6);
-    f = h * 6 - i;
-    p = v * (1 - s);
-    q = v * (1 - f * s);
-    t = v * (1 - (1 - f) * s);
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
-    }
-    return {
-        r: Math.round(r * 255),
-        g: Math.round(g * 255),
-        b: Math.round(b * 255)
-    };
-}
+colorgenerator.start(60, sendColor);
 
 var e131clients = {};
 function sendColor(color, clientId){
@@ -262,8 +217,11 @@ function sendColor(color, clientId){
 
 function createClientChannel (ip, id) {
 
- 	var universe_big = (createUniverseClient)(120, ip, id*2-1);
- 	var universe_small = (createUniverseClient)(60, ip, id*2);
+ 	var e131 = require('e131');
+	var client = new e131.Client(ip);  // or use a universe
+
+ 	var universe_big = (createUniverseClient)(120, client, 1);
+ 	var universe_small = (createUniverseClient)(60, client, 2);
 
  	return function(rgbcolor){
  		universe_big(rgbcolor);
@@ -271,15 +229,15 @@ function createClientChannel (ip, id) {
  	}
 }
 
-function createUniverseClient (size, ip, universeId) {
+function createUniverseClient (size, client, universeId) {
 
 	console.log('createUniverseClient: '+universeId);
-	var e131 = require('e131');
-	var client = new e131.Client(ip);  // or use a universe 
+	 
 	var packet = client.createPacket(size*3);
 	var channelData = packet.getChannelData();
 	packet.setSourceName('E1.31 client '+universeId);
 	packet.setUniverse(universeId);
+	// console.log('set:'+universeId);
 
 	return function fillAndSend (rgbcolor) {
 		console.log(universeId+'<'+rgbcolor);
@@ -288,6 +246,7 @@ function createUniverseClient (size, ip, universeId) {
 				channelData[idx*3+colorindex] = rgbcolor[colorindex];
 			});
 		}
+		// console.log('get:'+packet.getUniverse());
 		client.send(packet, function () {
 			console.log('success sent to '+universeId);
 		});
