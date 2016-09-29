@@ -69,7 +69,7 @@ function createClientChannel (client) {
  	var universe_small = (createUniverseClient)(60, client, 2);
 
  	return function(rgbcolor){
- 		console.log(id);
+ 		// console.log(id);
  		universe_big(rgbcolor);
  		universe_small(rgbcolor);
  	}
@@ -77,7 +77,7 @@ function createClientChannel (client) {
 
 function createUniverseClient (size, client, universeId) {
 
-	console.log('createUniverseClient: '+universeId);
+	// console.log('createUniverseClient: '+universeId);
 	 
 	var packet = client.createPacket(size*3);
 	var channelData = packet.getChannelData();
@@ -86,7 +86,7 @@ function createUniverseClient (size, client, universeId) {
 	// console.log('set:'+universeId);
 
 	return function fillAndSend (rgbcolor) {
-		console.log(universeId+'<'+rgbcolor);
+		// console.log(universeId+'<'+rgbcolor);
 		for (var idx=0; idx<size; idx++) {
 			_.each(rgbcolor, function(color, colorindex){
 				channelData[idx*3+colorindex] = rgbcolor[colorindex];
@@ -94,7 +94,7 @@ function createUniverseClient (size, client, universeId) {
 		}
 		// console.log('get:'+packet.getUniverse());
 		client.send(packet, function () {
-			console.log('success sent to '+universeId);
+			// console.log('success sent to '+universeId);
 		});
 	} 
 }
