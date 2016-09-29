@@ -22,7 +22,7 @@ var settingsWindow = null;
 var params = configuration.readSettings('params') || {offlinetimeout:3000,triggerlevel:3};
 
 
-const mainWindowSizes = [500, 600];
+const mainWindowSizes = [500, 800];
 
 app.on('ready', function() {
 

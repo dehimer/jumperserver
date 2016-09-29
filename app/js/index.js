@@ -79,6 +79,15 @@ function keyhandler(pressed){
 }
 
 var clientsContentEl = clientsEl.find('.clients__content');
+// $(document).bind('mouseover', function(){
+//     clientsContentEl.css('background-color', 'green');
+// });
+
+// $(document).bind('mouseout', function(){
+//     clientsContentEl.css('background-color', 'yellow');
+// });
+
+
 var clients = {};
 function renderClients(event, data){
 
@@ -125,12 +134,12 @@ function renderClients(event, data){
         var id = el.data('id');
 
         if(shiftHolded){
+
             var currPos = [el.offset().left, el.offset().top];
             var startMousePos = [e.pageX, e.pageY];
             var newPos = currPos;
 
             clientsContentEl.bind('mousemove', function(e){
-                // $(e.target).css('background-color', 'white');
                 var moveMousePos = [e.pageX, e.pageY];;
                 var diffPos = [moveMousePos[0]-startMousePos[0], moveMousePos[1]-startMousePos[1]]; 
                 newPos = [currPos[0]+diffPos[0], currPos[1]+diffPos[1]]
@@ -139,19 +148,17 @@ function renderClients(event, data){
             });
             
             // el.css('background-color', 'red');
+            clientsContentEl.bind('mouseup mouseleave', function(e){
 
-            clientsContentEl.bind('mouseup mouseout', function(){
-                clientsContentEl.unbind('mouseup');
-                clientsContentEl.unbind('mousemove');
-                // $(e.target).css('background-color', 'white');
+                clientsContentEl.unbind('mouseup mousemove mouseleave');
 
                 ipc.send('main-window:new-client-state', {id:id, pos:newPos})
             });
         }else{
             // el.addClass('clients__client--active');
             ipc.send('main-window:new-client-state', {id:id, manualtrigger:true});
-            clientsContentEl.bind('mouseup mouseout', function(){
-                clientsContentEl.unbind('mouseup');
+            clientsContentEl.bind('mouseup mouseleave', function(){
+                clientsContentEl.unbind('mouseup mouseleave');
                 ipc.send('main-window:new-client-state', {id:id, manualtrigger:false});
                 // el.removeClass('clients__client--active');
             });
