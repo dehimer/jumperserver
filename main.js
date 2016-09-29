@@ -14,6 +14,8 @@ var configuration = require('./libs/configuration');
 var UdpServer = require('./libs/udpserver');
 var colorgenerator = require('./libs/colorgenerator');
 var clients = require('./libs/clients');
+var lightHouse = require('./libs/lighthouse');
+var selfip = require('./libs/selfip');
 
 
 var mainWindow = null;
@@ -115,7 +117,7 @@ function onMainWindowRendered () {
 
 var offlineTimeouts = {};
 var udpserver = UdpServer({
-	host:'127.0.0.1',
+	host:selfip.get('wlp3s0'),
 	port:3000,
 	onmessage: function(args){
 		
@@ -188,3 +190,5 @@ colorgenerator.start(60, function sendColor(color, clientId){
 
 	});
 });
+
+var lighthouse = new lightHouse('192.168.0.255', 5000, 'hello');
