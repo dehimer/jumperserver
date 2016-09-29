@@ -33,12 +33,16 @@ function HSVtoRGB(h, s, v) {
 }
 
 exports.start = function(fps, cb) {
+
+    var delay = 1000/fps;
+
     var hue = 0;
     var currentColor = genColor(hue);
+    
     setInterval(function(){
         // console.log(hue);
         hue = (hue+1)%360;
         currentColor = genColor(hue);
         cb && cb(currentColor);
-    }, 100);
+    }, delay);
 }
