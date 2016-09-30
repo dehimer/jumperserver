@@ -6,16 +6,11 @@ var electron = require('electron')
 var ipc = electron.ipcRenderer;
 
 var closeEl = $('.close');
-var settingsEl = $('.settings');
 var clientsEl = $('.clients');
 var clientsCountEl = $('.clients-count');
 
 closeEl.bind('click', function () {
     ipc.send('main-window:close');
-});
-
-settingsEl.bind('click', function () {
-    ipc.send('settings-window:open');
 });
 
 

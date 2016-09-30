@@ -19,10 +19,8 @@ var selfip = require('./libs/selfip');
 
 
 var mainWindow = null;
-var settingsWindow = null;
 
 var params = configuration.readSettings('params') || {offlinetimeout:3000,triggerlevel:3};
-
 
 const mainWindowSizes = [500, 800];
 
@@ -39,10 +37,6 @@ app.on('ready', function() {
 
     mainWindow.on('closed', function () {
     	mainWindow = null;
-        if (settingsWindow) {
-	        settingsWindow.close();
-        	settingsWindow = null;
-	    }
     });
     
 });
@@ -51,36 +45,10 @@ ipc.on('main-window:close', function () {
     app.quit();
 });
 
-ipc.on('settings-window:open', function () {
-
-    if (settingsWindow) {
-        return;
-    }
-
-    settingsWindow = new BrowserWindow({
-        frame: false,
-        height: 280,
-        width: 230,
-        resizable: false,
-    });
-
-    settingsWindow.loadURL('file://' + __dirname + '/app/settings.html');
-
-    settingsWindow.on('closed', function () {
-        settingsWindow = null;
-    });
-
-});
-
-ipc.on('settings-window:close', function () {
-    if (settingsWindow) {
-        settingsWindow.close();
-    }
-});
-
 
 ipc.on('settings-window:ready', function () {
-	settingsWindow.webContents.send('settings-window:params', params);
+	mainWindow.webContents.send('settings-window:params', params);
+	mainWindow.webContents.send('settings-window:ifaces', selfip.get());
 });
 
 ipc.on('settings-window:params', function (event, newParams) {
@@ -105,6 +73,7 @@ ipc.on('main-window:ready', function (event, args) {
 	onMainWindowRendered();
 })
 
+
 function onMainWindowRendered () {
 
 	if(!mainWindow){
@@ -117,8 +86,8 @@ function onMainWindowRendered () {
 
 var offlineTimeouts = {};
 var udpserver = UdpServer({
-	host:selfip.get('wlp3s0'),
-	port:3000,
+	host: selfip.get(params.iface).address,
+	port: 3000,
 	onmessage: function(args){
 		
 		var ip = args.ip;
@@ -191,4 +160,12 @@ colorgenerator.start(60, function sendColor(color, clientId){
 	});
 });
 
-var lighthouse = new lightHouse('192.168.0.255', 5000, 'hello');
+var lighthouse = new lightHouse(selfip.get(params.iface).broadcast, 5000, 'hello');
+
+ipc.on('settings-window:change-iface', function(event, iface) {
+	params.iface = iface;
+
+	// selfip.get(params.iface).broadcast
+	// udpserver.changeip(ip);
+	configuration.saveSettings('params', params);
+});

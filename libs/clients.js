@@ -63,7 +63,7 @@ function createClientChannel (client) {
 	var id = client.id;
 
  	var e131 = require('e131');
-	var client = new e131.Client(ip);  // or use a universe
+	var client = new e131.Client(ip, 5568);  // or use a universe
 
  	var universe_big = (createUniverseClient)(120, client, 1);
  	var universe_small = (createUniverseClient)(60, client, 2);

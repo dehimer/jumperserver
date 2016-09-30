@@ -3,9 +3,15 @@ var server = dgram.createSocket('udp4');
 
 console.log('udpserver');
 module.exports = function (args) {
+	console.log(args);
+
 	/* UDP part*/
 	var PORT = args.port;
 	var HOST = args.host;
+
+	if(!PORT || !HOST){
+		return;
+	}
 
 	server.on('listening', function () {
 	    var address = server.address();
