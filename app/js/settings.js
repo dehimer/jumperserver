@@ -20,13 +20,12 @@ resetEl.bind('click', function (e) {
 });
 
 
-var triggerlevelEl = $('.settings__trigger-level');
+var triggerlevelEl = $('.settings__trigger-level-slider');
 var offlinetimeoutEl = $('.settings__offline-timeout')
 
 acceptParamsEl.bind('click', function (e) {
     
     var params = {
-	    triggerlevel: triggerlevelEl.val(),
 		offlinetimeout: offlinetimeoutEl.val(),
         fps: fpsEl.val()
     }
@@ -65,7 +64,7 @@ ipc.on('settings-panel:ifaces', function(event, ifaces){
 
 function updatedparams(params){
 
-    triggerlevelEl.val(params.triggerlevel);
+    // triggerlevelEl.val(params.triggerlevel);
     offlinetimeoutEl.val(params.offlinetimeout);
     fpsEl.val(params.fps);
 
@@ -83,7 +82,14 @@ ipc.on('settings-panel:selected-client-params', function(event, clientParams) {
     if(clientParams){
         currentClientEl.removeClass('settings__current-client--hidden');
         $('.settings__current-client-val').html(clientParams.val);
+        $('.settings__trigger-level').html(clientParams.triggerlevel);
+        
     }else{
         currentClientEl.addClass('settings__current-client--hidden');
     }
+})
+
+triggerlevelEl.on('change', function(){
+    var val = triggerlevelEl.val();
+    ipc.send('settings-panel:current-client-change-level', val);
 })

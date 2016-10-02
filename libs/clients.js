@@ -14,8 +14,11 @@ var e131clients = {};
 
 
 module.exports = {
-	add: function(id, state){
-		clients[id] = state;
+	add: function(id){
+		clients[id] = {
+			id:id,
+			triggerlevel: 512
+		};
 		settings.save('clients', clients);
 	},
 	set: function(id, state){
@@ -23,6 +26,9 @@ module.exports = {
 		var needsendcolor = (state.color && state.color !== clients[id].color);
 
 		_.extend(clients[id], state);
+
+		clients[id].trigger = (clients[id].val > clients[id].triggerlevel) || clients[id].manualtrigger;
+
 		settings.save('clients', clients);
 
 		if(!e131clients[id]){

@@ -72,26 +72,27 @@ var udpserver = UdpServer({
 		var val = args.val;
 
 
-		var trigger = val > params.get('triggerlevel');
+		
 		var currDate = +(new Date());
 
 		var clientExist = !!clients.get(id);
 
 		//create
 		if(!clientExist){
-			clients.add(id, {
-				id:id
-			});
+			clients.add(id);
 		}
 
+		// var trigger = val > clients.get(id).triggerlevel;
+		// console.log(val+clients.get(id).triggerlevel);
 		//update state
 		clients.set(id, {
-			trigger: trigger || clients.get(id).manualtrigger,
+			// trigger: trigger || clients.get(id).manualtrigger,
 			val: val,
 			ip: ip,
 			lastdgram: currDate,
 			online: true
 		});
+
 
 		//save and notice window
 		if(!clientExist){
@@ -173,4 +174,18 @@ ipc.on('settings-panel:params', function (event, newParams) {
 
 ipc.on('clients-panel:selected-client', function(event, id) {
 	selectedClientId = id;
+})
+
+ipc.on('settings-panel:current-client-change-level', function(event, level) {
+
+	var id = selectedClientId;
+	clients.set(id, {
+		triggerlevel:level
+	});
+
+
+	//send new state
+	mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
+	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients.get(id));
+
 })

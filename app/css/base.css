@@ -147,5 +147,9 @@ body {
 }
 
 .settings__current-client-val {
-    padding-left: 5px;
+    text-align: center;
+}
+
+.settings__trigger-level {
+    text-align: center;    
 }
