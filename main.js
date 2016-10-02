@@ -10,17 +10,16 @@ var BrowserWindow = electron.BrowserWindow;
 var ipc = electron.ipcMain;
 
 //self written libs
-var configuration = require('./libs/configuration');
+var settings = require('./libs/settings');
 var UdpServer = require('./libs/udpserver');
 var colorgenerator = require('./libs/colorgenerator');
 var clients = require('./libs/clients');
 var lightHouse = require('./libs/lighthouse');
 var selfip = require('./libs/selfip');
+var params = require('./libs/params')
 
 
 var mainWindow = null;
-
-var params = configuration.readSettings('params') || {offlinetimeout:3000,triggerlevel:3};
 
 const mainWindowSizes = [500, 800];
 
@@ -41,52 +40,43 @@ app.on('ready', function() {
     
 });
 
-ipc.on('main-window:close', function () {
+ipc.on('close', function () {
     app.quit();
 });
 
 
-ipc.on('settings-window:ready', function () {
-	mainWindow.webContents.send('settings-window:params', params);
-	mainWindow.webContents.send('settings-window:ifaces', selfip.get());
+ipc.on('settings-panel:ready', function () {
+	mainWindow.webContents.send('settings-panel:params', params.get());
+	mainWindow.webContents.send('settings-panel:ifaces', selfip.get());
 });
 
-ipc.on('settings-window:params', function (event, newParams) {
-	params = newParams;
-	configuration.saveSettings('params', params);
-	mainWindow.webContents.send('main-window:params', params);
+ipc.on('settings-panel:params', function (event, newParams) {
+	params.set(newParams)
+	mainWindow.webContents.send('params', params.get());
 });
 
 
-ipc.on('reset-clients', function () {
+ipc.on('reset', function () {
 	clients.reset();
-    mainWindow.webContents.send('main-window:clients', clients.get());
+	params.reset();
+	console.log(params.get());
+    mainWindow.webContents.send('clients-panel:clients', clients.get());
+    mainWindow.webContents.send('params', params.get());
 });
 
-ipc.on('main-window:new-client-state', function (event, state) {
+ipc.on('clients-panel:new-client-state', function (event, state) {
 	clients.update(state);
 });
 
 
-
-ipc.on('main-window:ready', function (event, args) {
-	onMainWindowRendered();
+ipc.on('clients-panel:ready', function (event, args) {
+	mainWindow.webContents.send('clients-panel:params', params.get());
+	mainWindow.webContents.send('clients-panel:clients', clients.get());
 })
-
-
-function onMainWindowRendered () {
-
-	if(!mainWindow){
-		return;
-	}
-	
-	// mainWindow.webContents.send('main-window:params', params);
-    mainWindow.webContents.send('main-window:clients', clients.get());
-}
 
 var offlineTimeouts = {};
 var udpserver = UdpServer({
-	host: selfip.get(params.iface).address,
+	host: selfip.get(params.get('iface')).address,
 	port: 3000,
 	onmessage: function(args){
 		
@@ -95,7 +85,7 @@ var udpserver = UdpServer({
 		var val = args.val;
 
 
-		var trigger = val > params.triggerlevel;
+		var trigger = val > params.get('triggerlevel');
 		var currDate = +(new Date());
 
 		var clientExist = !!clients.get(id);
@@ -118,11 +108,11 @@ var udpserver = UdpServer({
 
 		//save and notice window
 		if(!clientExist){
-			mainWindow.webContents.send('main-window:clients', clients.get());
+			mainWindow.webContents.send('clients-panel:clients', clients.get());
 		}
 
 		//send new state
-		mainWindow && mainWindow.webContents.send('main-window:update-clients', clients.get(id));
+		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
 
 
 		//check offline
@@ -135,8 +125,8 @@ var udpserver = UdpServer({
 	        	console.log(id+' is timeout');
 	        	clients.set(id, {online: false, color: undefined});
 	        }
-	        mainWindow && mainWindow.webContents.send('main-window:update-clients', clients.get(id));
-	    }, params.offlinetimeout);
+	        mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
+	    }, params.get('offlinetimeout'));
 	}
 })
 
@@ -155,17 +145,16 @@ colorgenerator.start(60, function sendColor(color, clientId){
 		var colorToSend = client.trigger?[255,255,255]:color; 
 		clients.set(id, {color: colorToSend});
 
-		mainWindow && mainWindow.webContents.send('main-window:update-clients', clients.get(id));
+		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
 
 	});
 });
 
-var lighthouse = new lightHouse(selfip.get(params.iface).broadcast, 5000, 'hello');
+var lighthouse = new lightHouse(selfip.get(params.get('iface')).broadcast, 5000, 'hello');
 
-ipc.on('settings-window:change-iface', function(event, iface) {
-	params.iface = iface;
+ipc.on('settings-panel:change-iface', function(event, iface) {
 
-	// selfip.get(params.iface).broadcast
-	// udpserver.changeip(ip);
-	configuration.saveSettings('params', params);
+	params.set('iface', iface);
+	params.set('ip', selfip.get(iface).address);
+	mainWindow.webContents.send('params', params.get());
 });

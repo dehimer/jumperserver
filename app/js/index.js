@@ -10,7 +10,7 @@ var clientsEl = $('.clients');
 var clientsCountEl = $('.clients-count');
 
 closeEl.bind('click', function () {
-    ipc.send('main-window:close');
+    ipc.send('close');
 });
 
 
@@ -46,16 +46,16 @@ clientsCount.els.input.bind('keydown', function (e) {
 /*
 //now not needed
 var params = {offlinetimeout:3000};
-ipc.on('main-window:params', function(event, newParams){
+ipc.on('clients-panel:params', function(event, newParams){
     params = newParams;
 });
 */
-ipc.on('main-window:clients', renderClients);
-ipc.on('main-window:update-clients', updateClient);
+ipc.on('clients-panel:clients', renderClients);
+ipc.on('clients-panel:update-clients', updateClient);
 
 
 
-ipc.send('main-window:ready');
+ipc.send('clients-panel:ready');
 
 
 window.addEventListener('keydown', keyhandler(true));
@@ -147,14 +147,14 @@ function renderClients(event, data){
 
                 clientsContentEl.unbind('mouseup mousemove mouseleave');
 
-                ipc.send('main-window:new-client-state', {id:id, pos:newPos})
+                ipc.send('clients-panel:new-client-state', {id:id, pos:newPos})
             });
         }else{
             // el.addClass('clients__client--active');
-            ipc.send('main-window:new-client-state', {id:id, manualtrigger:true});
+            ipc.send('clients-panel:new-client-state', {id:id, manualtrigger:true});
             clientsContentEl.bind('mouseup mouseleave', function(){
                 clientsContentEl.unbind('mouseup mouseleave');
-                ipc.send('main-window:new-client-state', {id:id, manualtrigger:false});
+                ipc.send('clients-panel:new-client-state', {id:id, manualtrigger:false});
                 // el.removeClass('clients__client--active');
             });
         }

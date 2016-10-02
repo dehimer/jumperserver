@@ -1,13 +1,13 @@
 'use strict';
 
-var nconf = require('nconf').file({file: getUserHome() + '/config.json'});
+var nconf = require('nconf').file({file: getUserHome() + '/settings.json'});
 
-function saveSettings(settingKey, settingValue) {
+function save(settingKey, settingValue) {
     nconf.set(settingKey, settingValue);
     nconf.save();
 }
 
-function readSettings(settingKey) {
+function read(settingKey) {
     nconf.load();
     return nconf.get(settingKey);
 }
@@ -17,6 +17,6 @@ function getUserHome() {
 }
 
 module.exports = {
-    saveSettings: saveSettings,
-    readSettings: readSettings
+    save: save,
+    read: read
 };

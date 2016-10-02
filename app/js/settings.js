@@ -9,13 +9,12 @@ var _ = require('underscore');
 // var slider = document.querySelector('.settings__trigger-level');
 // rangesliderJs.create(slider,{ /* options -see below */ });
 
-var resetClients = $('.settings__reset-clients');
+var resetEl = $('.settings__reset');
 var acceptParamsEl = $('.settings__accept-params');
 var ifaceButtonEl = $('.settings__iface-button');
 
-resetClients.bind('click', function (e) {
-    ipc.send('reset-clients');
-    ipc.send('settings-window:close');
+resetEl.bind('click', function (e) {
+    ipc.send('reset');
 });
 
 
@@ -28,19 +27,21 @@ acceptParamsEl.bind('click', function (e) {
 	    triggerlevel: triggerlevelEl.val(),
 		offlinetimeout: offlinetimeoutEl.val()
     }
-    ipc.send('settings-window:params', params);
-    ipc.send('settings-window:close');
+    ipc.send('settings-panel:params', params);
 });
 
-ipc.send('settings-window:ready');
+ipc.send('settings-panel:ready');
 
-ipc.on('settings-window:params', function(event, params){
-	triggerlevelEl.val(params.triggerlevel);
-	offlinetimeoutEl.val(params.offlinetimeout);
-    ifaceButtonEl.val('haha');
+//params updated
+ipc.on('params', function(event, params){;
+	updatedparams(params);
+});
+ipc.on('settings-panel:params', function(event, params){;
+    updatedparams(params);
 });
 
-ipc.on('settings-window:ifaces', function(event, ifaces){
+
+ipc.on('settings-panel:ifaces', function(event, ifaces){
 
     ifaceButtonEl.val() 
 
@@ -51,10 +52,24 @@ ipc.on('settings-window:ifaces', function(event, ifaces){
     $('.settings__ifaces-list').find('.settings__ifaces-list-item').bind('click', function(){
         var iface_name = $(this).data('iface_name');
         // var ip = ifaces[iface_name].address;
-        
-        ipc.send('settings-window:change-iface', iface_name);
+        ipc.send('settings-panel:change-iface', iface_name);
 
     });
     
     
 });
+
+
+function updatedparams(params){
+
+    triggerlevelEl.val(params.triggerlevel);
+    offlinetimeoutEl.val(params.offlinetimeout);
+    
+    if(params.ip){
+        ifaceButtonEl.removeClass('btn-warning').addClass('btn-primary');
+        ifaceButtonEl.html(params.ip+' ('+params.iface+')');
+    }else{
+        ifaceButtonEl.removeClass('btn-primary').addClass('btn-warning');
+        ifaceButtonEl.html('Выберите IP');
+    }
+}

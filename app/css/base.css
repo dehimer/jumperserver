@@ -126,7 +126,7 @@ body {
 }
 
 .settings__accept-params,
-.settings__reset-clients,
+.settings__reset,
 .settings__iface-button {
     margin-top: 15px;
     width: 100%;

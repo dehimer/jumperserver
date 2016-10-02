@@ -1,7 +1,7 @@
 var _ = require('underscore');
 
-var configuration = require('./configuration');
-var clients = configuration.readSettings('clients') || {};
+var settings = require('./settings');
+var clients = settings.read('clients') || {};
 
 //reset clients
 _.each(clients, function(client, id){
@@ -16,14 +16,14 @@ var e131clients = {};
 module.exports = {
 	add: function(id, state){
 		clients[id] = state;
-		configuration.saveSettings('clients', clients);
+		settings.save('clients', clients);
 	},
 	set: function(id, state){
 
 		var needsendcolor = (state.color && state.color !== clients[id].color);
 
 		_.extend(clients[id], state);
-		configuration.saveSettings('clients', clients);
+		settings.save('clients', clients);
 
 		if(!e131clients[id]){
 			e131clients[id] = createClientChannel(clients[id]);
@@ -41,13 +41,13 @@ module.exports = {
 	},
 	reset: function(){
 		clients = {};
-		configuration.saveSettings('clients', clients);
+		settings.save('clients', clients);
 	},
 	update: function(state){
 		if(state.pos){
 			console.log(state.id);
 			clients[state.id].pos = state.pos;
-			configuration.saveSettings('clients', clients);
+			settings.save('clients', clients);
 		}
 		if(typeof state.manualtrigger !== 'undefined'){
 			clients[state.id].manualtrigger = state.manualtrigger;
