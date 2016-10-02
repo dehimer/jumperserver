@@ -1,7 +1,11 @@
 var _ = require('underscore');
 
 var settings = require('./settings');
-var defaultParams = {offlinetimeout:3000, triggerlevel:3};
+var defaultParams = {
+	offlinetimeout:3000,
+	triggerlevel:3,
+	fps: 60
+};
 var params = settings.read('params') || defaultParams;
 
 var selfip = require('./selfip');

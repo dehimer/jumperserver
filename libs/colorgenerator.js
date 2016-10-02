@@ -32,17 +32,26 @@ function HSVtoRGB(h, s, v) {
     };
 }
 
-exports.start = function(fps, cb) {
 
+var fps = 60;
+var hue = 0;
+var currentColor = genColor(hue);
+var cb;
+
+var tick = function(){
     var delay = 1000/fps;
+    hue = (hue+1)%360;
+    currentColor = genColor(hue);
+    cb && cb(currentColor);
+    setTimeout(tick, delay);
+}
 
-    var hue = 0;
-    var currentColor = genColor(hue);
-    
-    setInterval(function(){
-        // console.log(hue);
-        hue = (hue+1)%360;
-        currentColor = genColor(hue);
-        cb && cb(currentColor);
-    }, delay);
+exports.start = function(newfps, newcb) {
+    fps = newfps;
+    cb = newcb;
+    tick(cb);
+}
+
+exports.setFPS = function(newfps) {
+    fps = newfps;
 }

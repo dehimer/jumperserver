@@ -50,12 +50,6 @@ ipc.on('settings-panel:ready', function () {
 	mainWindow.webContents.send('settings-panel:ifaces', selfip.get());
 });
 
-ipc.on('settings-panel:params', function (event, newParams) {
-	params.set(newParams)
-	mainWindow.webContents.send('params', params.get());
-});
-
-
 ipc.on('clients-panel:new-client-state', function (event, state) {
 	clients.update(state);
 });
@@ -123,7 +117,7 @@ var udpserver = UdpServer({
 })
 
 
-colorgenerator.start(60, function sendColor(color, clientId){
+colorgenerator.start(params.get('fps'), function sendColor(color, clientId){
 
 	var targetClients = _.filter(clients.get(), function(client){
 		return client.online && ((typeof clientId === 'undefined') || client.id === clientId);
@@ -159,7 +153,13 @@ ipc.on('reset', function () {
 	params.reset();
 	lighthouse.setBroadcastIP(null);
 	udpserver.setIP(null);
-	console.log(params.get());
+	colorgenerator.setFPS(params.get('fps'));
     mainWindow.webContents.send('clients-panel:clients', clients.get());
     mainWindow.webContents.send('params', params.get());
+});
+
+ipc.on('settings-panel:params', function (event, newParams) {
+	params.set(newParams)
+	colorgenerator.setFPS(params.get('fps'));
+	mainWindow.webContents.send('params', params.get());
 });

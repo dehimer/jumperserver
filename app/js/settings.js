@@ -10,6 +10,7 @@ var _ = require('underscore');
 // rangesliderJs.create(slider,{ /* options -see below */ });
 
 var resetEl = $('.settings__reset');
+var fpsEl = $('.settings__fps');
 var acceptParamsEl = $('.settings__accept-params');
 var ifaceButtonEl = $('.settings__iface-button');
 
@@ -25,7 +26,8 @@ acceptParamsEl.bind('click', function (e) {
     
     var params = {
 	    triggerlevel: triggerlevelEl.val(),
-		offlinetimeout: offlinetimeoutEl.val()
+		offlinetimeout: offlinetimeoutEl.val(),
+        fps: fpsEl.val()
     }
     ipc.send('settings-panel:params', params);
 });
@@ -64,11 +66,13 @@ function updatedparams(params){
 
     triggerlevelEl.val(params.triggerlevel);
     offlinetimeoutEl.val(params.offlinetimeout);
+    fpsEl.val(params.fps);
+
     if(params.ip){
-        ifaceButtonEl.removeClass('btn-warning').addClass('btn-primary');
+        ifaceButtonEl.removeClass('btn-warning').addClass('btn-default');
         ifaceButtonEl.html(params.ip+' ('+params.iface+')');
     }else{
-        ifaceButtonEl.removeClass('btn-primary').addClass('btn-warning');
+        ifaceButtonEl.removeClass('btn-default').addClass('btn-warning');
         ifaceButtonEl.html('Выберите IP');
     }
 }
