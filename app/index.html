@@ -39,9 +39,15 @@
                 <br>
                 <br>
 
-                <div class="label">Порог срабатывания:</div>
-                <!-- <input type="text" class="form-control input settings__trigger-level"> -->
-                <input type="range" min="0" max="1024" step="1" data-orientation="vertical" class="input settings__trigger-level">
+                <div class="settings__current-client settings__current-client--hidden">
+                    <div class="label">Порог срабатывания:</div>
+                    <!-- <input type="text" class="form-control input settings__trigger-level"> -->
+                    <input type="range" min="0" max="1024" step="1" data-orientation="vertical" class="input settings__trigger-level">
+
+                    <div class="label">Текущее значение:</div>
+                    <div class="settings__current-client-val"></div>
+                </div>
+
 
             </div>
         </div>

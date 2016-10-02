@@ -150,7 +150,9 @@ function renderClients(event, data){
                 ipc.send('clients-panel:new-client-state', {id:id, pos:newPos})
             });
         }else{
-            // el.addClass('clients__client--active');
+            ipc.send('clients-panel:selected-client', id);
+            el.siblings().removeClass('clients__client--selected');
+            el.addClass('clients__client--selected');
             ipc.send('clients-panel:new-client-state', {id:id, manualtrigger:true});
             clientsContentEl.bind('mouseup mouseleave', function(){
                 clientsContentEl.unbind('mouseup mouseleave');

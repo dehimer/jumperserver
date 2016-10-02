@@ -86,8 +86,14 @@ body {
 .clients__client--online {
     background-color: #5e0;
 }
+
+
 .clients__client--active {
     background-color: white;
+}
+
+.clients__client--selected {
+    border: 3px solid white;
 }
 
 .clients__client-color {
@@ -105,7 +111,7 @@ body {
 
 .clients__client_ip {
     margin-top: -70px;
-    margin-left: -5px;
+    margin-left: -20px;
 }
 
 .clients__client_val {
@@ -130,4 +136,16 @@ body {
 .settings__iface-button {
     margin-top: 15px;
     width: 100%;
+}
+
+.settings__current-client{
+
+}
+
+.settings__current-client--hidden {
+    display: none;
+}
+
+.settings__current-client-val {
+    padding-left: 5px;
 }

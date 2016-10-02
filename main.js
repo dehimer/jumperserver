@@ -61,6 +61,7 @@ ipc.on('clients-panel:ready', function (event, args) {
 })
 
 var offlineTimeouts = {};
+var selectedClientId;
 var udpserver = UdpServer({
 	host: selfip.get(params.get('iface')).address,
 	port: 3000,
@@ -99,6 +100,10 @@ var udpserver = UdpServer({
 
 		//send new state
 		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
+
+		if(+selectedClientId === +id){
+			mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients.get(id));
+		}
 
 
 		//check offline
@@ -149,6 +154,7 @@ ipc.on('settings-panel:change-iface', function(event, iface) {
 
 
 ipc.on('reset', function () {
+	selectedClientId = undefined;
 	clients.reset();
 	params.reset();
 	lighthouse.setBroadcastIP(null);
@@ -156,6 +162,7 @@ ipc.on('reset', function () {
 	colorgenerator.setFPS(params.get('fps'));
     mainWindow.webContents.send('clients-panel:clients', clients.get());
     mainWindow.webContents.send('params', params.get());
+    mainWindow.webContents.send('settings-panel:selected-client-params', false);
 });
 
 ipc.on('settings-panel:params', function (event, newParams) {
@@ -163,3 +170,7 @@ ipc.on('settings-panel:params', function (event, newParams) {
 	colorgenerator.setFPS(params.get('fps'));
 	mainWindow.webContents.send('params', params.get());
 });
+
+ipc.on('clients-panel:selected-client', function(event, id) {
+	selectedClientId = id;
+})

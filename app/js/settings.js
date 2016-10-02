@@ -13,6 +13,7 @@ var resetEl = $('.settings__reset');
 var fpsEl = $('.settings__fps');
 var acceptParamsEl = $('.settings__accept-params');
 var ifaceButtonEl = $('.settings__iface-button');
+var currentClientEl = $('.settings__current-client');
 
 resetEl.bind('click', function (e) {
     ipc.send('reset');
@@ -76,3 +77,13 @@ function updatedparams(params){
         ifaceButtonEl.html('Выберите IP');
     }
 }
+
+ipc.on('settings-panel:selected-client-params', function(event, clientParams) {
+    // alert(!!clientParams);
+    if(clientParams){
+        currentClientEl.removeClass('settings__current-client--hidden');
+        $('.settings__current-client-val').html(clientParams.val);
+    }else{
+        currentClientEl.addClass('settings__current-client--hidden');
+    }
+})
