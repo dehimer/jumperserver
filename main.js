@@ -56,14 +56,6 @@ ipc.on('settings-panel:params', function (event, newParams) {
 });
 
 
-ipc.on('reset', function () {
-	clients.reset();
-	params.reset();
-	console.log(params.get());
-    mainWindow.webContents.send('clients-panel:clients', clients.get());
-    mainWindow.webContents.send('params', params.get());
-});
-
 ipc.on('clients-panel:new-client-state', function (event, state) {
 	clients.update(state);
 });
@@ -108,7 +100,7 @@ var udpserver = UdpServer({
 
 		//save and notice window
 		if(!clientExist){
-			mainWindow.webContents.send('clients-panel:clients', clients.get());
+			mainWindow && mainWindow.webContents.send('clients-panel:clients', clients.get());
 		}
 
 		//send new state
@@ -156,5 +148,18 @@ ipc.on('settings-panel:change-iface', function(event, iface) {
 
 	params.set('iface', iface);
 	params.set('ip', selfip.get(iface).address);
+	lighthouse.setBroadcastIP(selfip.get(params.get('iface')).broadcast);
+	udpserver.setIP(selfip.get(iface).address);
 	mainWindow.webContents.send('params', params.get());
+});
+
+
+ipc.on('reset', function () {
+	clients.reset();
+	params.reset();
+	lighthouse.setBroadcastIP(null);
+	udpserver.setIP(null);
+	console.log(params.get());
+    mainWindow.webContents.send('clients-panel:clients', clients.get());
+    mainWindow.webContents.send('params', params.get());
 });

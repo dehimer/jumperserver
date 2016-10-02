@@ -9,9 +9,11 @@ module.exports = function(bip, delay, message) {
 
 	function broadcastNew(message) {
 	    var message = new Buffer(message);
-	    server.send(message, 0, message.length, PORT, BROADCAST_ADDR, function() {
-	        console.log("Sent '" + message + "'");
-	    });
+	    if(BROADCAST_ADDR){
+		    server.send(message, 0, message.length, PORT, BROADCAST_ADDR, function() {
+		        console.log("Sent '" + message + "' to "+BROADCAST_ADDR+':'+PORT);
+		    });
+	    }
 	}
 
 	server.bind(function() {
@@ -20,4 +22,10 @@ module.exports = function(bip, delay, message) {
 	    	broadcastNew('hello');
 	    }, delay);
 	});
+
+	return {
+		setBroadcastIP:function(bip){
+			BROADCAST_ADDR = bip;
+		}
+	}
 }

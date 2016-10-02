@@ -1,18 +1,9 @@
 var dgram = require('dgram');
-var server = dgram.createSocket('udp4');
 
-console.log('udpserver');
-module.exports = function (args) {
-	console.log(args);
+function runServer(port, ip, handler){
 
-	/* UDP part*/
-	var PORT = args.port;
-	var HOST = args.host;
-
-	if(!PORT || !HOST){
-		return;
-	}
-
+	var server = dgram.createSocket('udp4');
+	var runned = false;
 	server.on('listening', function () {
 	    var address = server.address();
 	    console.log('UDP Server listening on ' + address.address + ":" + address.port);
@@ -27,11 +18,52 @@ module.exports = function (args) {
 		var id = data[0];
 		var val = data[1]*1;
 
-		if(args && args.onmessage){
-			args.onmessage({ip:ip, id:id, val:val});
+		if(handler){
+			handler({ip:ip, id:id, val:val});
 		} 
 
 	});
 
-	server.bind(PORT, HOST);
+	server.bind(port, ip);
+
+	return {
+		stop: function(){
+			try{
+				server.close(function(){
+					delete server;
+				});
+			}catch(e){
+				console.log(e);
+			}
+		}
+	}
+}
+
+console.log('udpserver');
+var lastServer;
+module.exports = function (args) {
+	
+	console.log(args);
+
+	/* UDP part*/
+	var PORT = args.port;
+	var HOST = args.host;
+	var HANDLER = args.onmessage;
+
+	if(PORT && HOST){
+		lastServer = runServer(PORT, HOST, HANDLER);
+	}
+
+	return {
+		setIP: function(ip) {
+			if(lastServer){
+				lastServer.stop();
+			}
+			console.log('new ip '+ip);
+			if(ip && ip !== HOST){
+				lastServer = runServer(PORT, HOST, HANDLER);
+			}
+			HOST = ip;
+		}
+	}
 }

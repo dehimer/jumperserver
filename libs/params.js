@@ -16,7 +16,7 @@ module.exports = {
 	// 	settings.save('params', params);
 	// },
 	reset: function() {
-		params = defaultParams;
+		params = _.clone(defaultParams);
 		settings.save('params', params);
 	},
 	get: function(name) {

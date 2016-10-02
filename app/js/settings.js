@@ -64,7 +64,6 @@ function updatedparams(params){
 
     triggerlevelEl.val(params.triggerlevel);
     offlinetimeoutEl.val(params.offlinetimeout);
-    
     if(params.ip){
         ifaceButtonEl.removeClass('btn-warning').addClass('btn-primary');
         ifaceButtonEl.html(params.ip+' ('+params.iface+')');
