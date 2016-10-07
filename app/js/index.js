@@ -112,7 +112,7 @@ function renderClients(event, data){
                 markup += '<div class="clients__client_color clients__client_color--small">';
                     markup += '<div class="clients__client_id">'+client.id+'</div>';
                     markup += '<div class="clients__client_ip">'+client.ip+'</div>';
-                    // markup += '<div class="clients__client_val">'+client.val+'</div>';
+                    markup += '<div class="clients__client_val">'+client.val+'</div>';
                 markup += '</div>';
             markup += '</div>';
         markup += '</div>';
@@ -189,5 +189,5 @@ function updateClient(event, client){
     
 
     clientEl.find('.clients__client_ip').html(client.ip);
-    clientEl.find('.clients__client_val').html(client.val);
+    clientEl.find('.clients__client_val').html(client.val+'/'+client.triggerlevel);
 }
