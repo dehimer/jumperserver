@@ -1,6 +1,6 @@
 'use strict';
 
-var nconf = require('nconf').file({file: getUserHome() + '/settings.json'});
+var nconf = require('nconf').file({file: getCurDir() + '/settings.json'});
 
 function save(settingKey, settingValue) {
     nconf.set(settingKey, settingValue);
@@ -12,9 +12,14 @@ function read(settingKey) {
     return nconf.get(settingKey);
 }
 
-function getUserHome() {
-    return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+function getCurDir(){
+	return process.env.PWD;
 }
+
+// function getUserHome() {
+// 	console.log(process.env);
+//     return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+// }
 
 module.exports = {
     save: save,
