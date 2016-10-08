@@ -1,5 +1,8 @@
 'use strict';
 
+var COLORS_PORT = 5568;
+var CLIENTS_PORT = 5567;
+
 //sugar libs
 var _ = require('underscore');
  
@@ -18,6 +21,8 @@ var lightHouse = require('./libs/lighthouse');
 var selfip = require('./libs/selfip');
 var params = require('./libs/params')
 
+
+clients.setup({port:COLORS_PORT});
 
 var mainWindow = null;
 
@@ -64,7 +69,7 @@ var offlineTimeouts = {};
 var selectedClientId;
 var udpserver = UdpServer({
 	host: selfip.get(params.get('iface')).address,
-	port: 3000,
+	port: CLIENTS_PORT,
 	onmessage: function(args){
 		
 		var ip = args.ip;
@@ -142,7 +147,12 @@ colorgenerator.start(params.get('fps'), function sendColor(color, clientId){
 	});
 });
 
-var lighthouse = new lightHouse(selfip.get(params.get('iface')).broadcast, 5000, 'hello');
+var lighthouse = new lightHouse({
+	bip: selfip.get(params.get('iface')).broadcast,
+	delay: 5000,
+	message: 'hello',
+	port: CLIENTS_PORT
+});
 
 ipc.on('settings-panel:change-iface', function(event, iface) {
 

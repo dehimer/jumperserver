@@ -1,11 +1,12 @@
 var dgram = require('dgram'); 
-var server = dgram.createSocket("udp4"); 
+var server = dgram.createSocket({type:'udp4', reuseAddr:true}); 
 
 
-module.exports = function(bip, delay, message) {
+module.exports = function(params) {
 	
-	var PORT = 5567;
-	var BROADCAST_ADDR = bip;
+	var PORT = params.port;
+	var BROADCAST_ADDR = params.bip;
+	var delay = params.delay;
 
 	function broadcastNew(message) {
 	    var message = new Buffer(message);
@@ -16,10 +17,13 @@ module.exports = function(bip, delay, message) {
 	    }
 	}
 
-	server.bind(function() {
+	server.bind({
+		port: params.port,
+		// broadcast: true,
+	}, function() {
 	    server.setBroadcast(true);
 	    setInterval(function(){
-	    	broadcastNew('hello');
+	    	broadcastNew(params.message);
 	    }, delay);
 	});
 

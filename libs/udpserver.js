@@ -2,7 +2,7 @@ var dgram = require('dgram');
 
 function runServer(port, ip, handler){
 
-	var server = dgram.createSocket('udp4');
+	var server = dgram.createSocket({type:'udp4', reuseAddr:true});
 	var runned = false;
 	server.on('listening', function () {
 	    var address = server.address();
