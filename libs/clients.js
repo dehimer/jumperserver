@@ -109,7 +109,7 @@ module.exports = function(params){
 			var client = clients[id];
 			if(!client){
 				newclient = true;
-				// console.log('add '+id);
+				console.log('add '+id);
 				clients[id] = {
 					id: id,
 					triggerlevel: DEFAULT_TRIGGERLEVEL
