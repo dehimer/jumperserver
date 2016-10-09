@@ -53,7 +53,7 @@ ipc.on('settings-panel:ready', function () {
 });
 
 ipc.on('clients-panel:new-client-state', function (event, state) {
-	clients.update(state);
+	clients(state.id).update(state);
 });
 
 
@@ -69,8 +69,11 @@ var udpserver = UdpServer({
 	port: CLIENTS_PORT,
 	onmessage: function(args){
 
-		clients(args.id).handleMessage(args, function(err, result){
+		var id = args.id;
 
+		clients(id).handleMessage(args, function(err, result){
+
+			// console.log('cb');
 
 			//save and notice window
 			if(result.newclient){
@@ -92,8 +95,8 @@ var udpserver = UdpServer({
 		    clearTimeout(offlineTimeouts[id]);
 		    offlineTimeouts[id] = setTimeout(function(){
 		        if(clients(id).get()){
-		        	console.log(id+' is timeout');
-		        	client(id).set({online: false, color: undefined});
+		        	// console.log(id+' is timeout');
+		        	clients(id).set({online: false, color: undefined});
 		        }
 		        mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 		    }, params.get('offlinetimeout'));
@@ -112,11 +115,15 @@ colorgenerator.start(params.get('fps'), function sendColor(color, clientId){
 
 	color = [color.r, color.g, color.b];
 
+	// console.log(targetClients);
 	//indicate color
 	_.each(targetClients, function(client){
+		// console.log(client);
 		var id = client.id;
 		var colorToSend = client.trigger?[255,255,255]:color; 
-		clients(id).set({color: colorToSend});
+		// clients(id).set({color: colorToSend});
+		clients(id).setOuterColor(colorToSend);
+		clients(id).updateLeds();
 
 		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 

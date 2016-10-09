@@ -25,9 +25,10 @@ _.each(clients, function(client, id){
 
 var helpers = {
 	fillByColor: function (size, rgbcolor) {
+		var colors = [];
 		for (var i=0; i<size; i++) {
 			_.each(rgbcolor, function(color, colorindex){
-				channelData[i*3+colorindex] = rgbcolor[colorindex];
+				colors[i*3+colorindex] = rgbcolor[colorindex];
 			});
 		}
 	},
@@ -58,14 +59,19 @@ var helpers = {
 		// console.log('set:'+universeId);
 
 		return function fillAndSend (colors) {
+			if(!colors){
+				return;
+			}
 			// console.log(universeId+'<'+rgbcolor);
-			for (var idx=0; idx<size*3; idx++) {
+			for (var i=0; i<size*3; i++) {
 				// _.each(rgbcolor, function(color, colorindex){
 				// 	channelData[idx*3+colorindex] = rgbcolor[colorindex];
 				// });
-				channelData[idx] = colors[idx];
+				channelData[i] = colors[i];
 
 			}
+			// console.log(size);
+			console.log(channelData);
 			// console.log('get:'+packet.getUniverse());
 			e131Client.send(packet, function () {
 				// console.log('success sent to '+universeId);
@@ -82,6 +88,8 @@ module.exports = function(params){
 	
 
 	return function(id) {
+
+		// console.log('id: '+id);
 
 		if(typeof id === 'undefined'){
 			return {
@@ -101,7 +109,7 @@ module.exports = function(params){
 			var client = clients[id];
 			if(!client){
 				newclient = true;
-
+				// console.log('add '+id);
 				clients[id] = {
 					id: id,
 					triggerlevel: DEFAULT_TRIGGERLEVEL
@@ -113,36 +121,50 @@ module.exports = function(params){
 
 			var api = {
 				set: function(state){
+					// console.log(state);
 
 					_.extend(client, state);
 
 					client.trigger = (client.val > client.triggerlevel) || client.manualtrigger;
 
+					// console.log(client);
 					settings.save('clients', clients);
-
-					return clients[id];
+					
+					// clients[id] = client;
+					
+					return client;
 				},
 				get: function(){
 					return client;
-				}, 
+				},
+				update: function(state){
+					if(state.pos){
+						// console.log(state.id);
+						clients[state.id].pos = state.pos;
+						settings.save('clients', clients);
+					}
+					if(typeof state.manualtrigger !== 'undefined'){
+						clients[state.id].manualtrigger = state.manualtrigger;
+					}
+				},
 				// обработка нового состояния клиента
 				handleMessage: function(data, cb) {
-
-					helpers.set(id, {
+					// console.log('handle');
+					this.set({
 						val: data.val,
 						ip: data.ip,
 						lastdgram: +(new Date()),
 						online: true
 					});
 
-					cb && cb({newclient: newclient})
+					cb && cb(null, {newclient: newclient})
 				},
 				// задать всем диодам один цвет
 				setInnerColor: function(color){
 					client.innerColors = helpers.fillByColor(UNIVERSES_SIZE['inner'], color);
 				},
 				// задать всем диодам один цвет
-				setOuterColor: function(){
+				setOuterColor: function(color){
 					client.outerColors = helpers.fillByColor(UNIVERSES_SIZE['outer'], color);
 				},
 				// массив цветов, чтобы задавать более сложные сочетания цветов (может лучше через метод, смотри сам)

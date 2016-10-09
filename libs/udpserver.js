@@ -1,6 +1,6 @@
 var dgram = require('dgram');
 
-function runServer(port, ip, handler){
+function runServer(port, host, handler){
 
 	var server = dgram.createSocket({type:'udp4', reuseAddr:true});
 	var runned = false;
@@ -12,19 +12,22 @@ function runServer(port, ip, handler){
 
 	server.on('message', function (data, remote) {
 
+		console.log('message');
+
 		var ip = remote.address;
-		
+
+		console.log(host, ip);
+
 		var data = (data+'').split(' ');
 		var id = data[0];
 		var val = data[1]*1;
 
-		if(handler){
+		if(handler && !isNaN(id*1)){
 			handler({ip:ip, id:id, val:val});
 		} 
 
 	});
-
-	server.bind(port, ip);
+	server.bind(port, host);
 
 	return {
 		stop: function(){
