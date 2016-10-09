@@ -16,13 +16,10 @@ var ipc = electron.ipcMain;
 var settings = require('./libs/settings');
 var UdpServer = require('./libs/udpserver');
 var colorgenerator = require('./libs/colorgenerator');
-var clients = require('./libs/clients');
+var clients = require('./libs/clients')({port:COLORS_PORT});
 var lightHouse = require('./libs/lighthouse');
 var selfip = require('./libs/selfip');
-var params = require('./libs/params')
-
-
-clients.setup({port:COLORS_PORT});
+var params = require('./libs/params');
 
 var mainWindow = null;
 
@@ -62,7 +59,7 @@ ipc.on('clients-panel:new-client-state', function (event, state) {
 
 ipc.on('clients-panel:ready', function (event, args) {
 	mainWindow.webContents.send('clients-panel:params', params.get());
-	mainWindow.webContents.send('clients-panel:clients', clients.get());
+	mainWindow.webContents.send('clients-panel:clients', clients().get());
 })
 
 var offlineTimeouts = {};
@@ -72,67 +69,44 @@ var udpserver = UdpServer({
 	port: CLIENTS_PORT,
 	onmessage: function(args){
 
-		
-		var ip = args.ip;
-		var id = args.id;
-		var val = args.val;
+		clients(args.id).handleMessage(args, function(err, result){
 
-		clients(args.id).handleMessage(args);
 
-		
-		var currDate = +(new Date());
+			//save and notice window
+			if(result.newclient){
+				mainWindow && mainWindow.webContents.send('clients-panel:clients', clients().get());
+			}
 
-		var clientExist = !!clients.get(id);
+			//send new state
+			mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 
-		//create
-		if(!clientExist){
-			clients.add(id);
-		}
+			if(+selectedClientId === +id){
+				mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
+			}
 
-		// var trigger = val > clients.get(id).triggerlevel;
-		// console.log(val+clients.get(id).triggerlevel);
-		//update state
-		clients.set(id, {
-			// trigger: trigger || clients.get(id).manualtrigger,
-			val: val,
-			ip: ip,
-			lastdgram: currDate,
-			online: true
+
+			//check offline
+			if(!offlineTimeouts[id]){
+				offlineTimeouts[id] = {};
+			}
+		    clearTimeout(offlineTimeouts[id]);
+		    offlineTimeouts[id] = setTimeout(function(){
+		        if(clients(id).get()){
+		        	console.log(id+' is timeout');
+		        	client(id).set({online: false, color: undefined});
+		        }
+		        mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
+		    }, params.get('offlinetimeout'));
+
 		});
 
-
-		//save and notice window
-		if(!clientExist){
-			mainWindow && mainWindow.webContents.send('clients-panel:clients', clients.get());
-		}
-
-		//send new state
-		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
-
-		if(+selectedClientId === +id){
-			mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients.get(id));
-		}
-
-
-		//check offline
-		if(!offlineTimeouts[id]){
-			offlineTimeouts[id] = {};
-		}
-	    clearTimeout(offlineTimeouts[id]);
-	    offlineTimeouts[id] = setTimeout(function(){
-	        if(clients.get(id)){
-	        	console.log(id+' is timeout');
-	        	clients.set(id, {online: false, color: undefined});
-	        }
-	        mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
-	    }, params.get('offlinetimeout'));
 	}
 })
 
 
 colorgenerator.start(params.get('fps'), function sendColor(color, clientId){
 
-	var targetClients = _.filter(clients.get(), function(client){
+	var targetClients = _.filter(clients().get(), function(client){
 		return client.online && ((typeof clientId === 'undefined') || client.id === clientId);
 	});
 
@@ -142,9 +116,9 @@ colorgenerator.start(params.get('fps'), function sendColor(color, clientId){
 	_.each(targetClients, function(client){
 		var id = client.id;
 		var colorToSend = client.trigger?[255,255,255]:color; 
-		clients.set(id, {color: colorToSend});
+		clients(id).set({color: colorToSend});
 
-		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
+		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 
 	});
 });
@@ -168,12 +142,12 @@ ipc.on('settings-panel:change-iface', function(event, iface) {
 
 ipc.on('reset', function () {
 	selectedClientId = undefined;
-	clients.reset();
+	clients().reset();
 	params.reset();
 	lighthouse.setBroadcastIP(null);
 	udpserver.setIP(null);
 	colorgenerator.setFPS(params.get('fps'));
-    mainWindow.webContents.send('clients-panel:clients', clients.get());
+    mainWindow.webContents.send('clients-panel:clients', clients().get());
     mainWindow.webContents.send('params', params.get());
     mainWindow.webContents.send('settings-panel:selected-client-params', false);
 });
@@ -191,13 +165,13 @@ ipc.on('clients-panel:selected-client', function(event, id) {
 ipc.on('settings-panel:current-client-change-level', function(event, level) {
 
 	var id = selectedClientId;
-	clients.set(id, {
+	clients(id).set({
 		triggerlevel:level
 	});
 
 
 	//send new state
-	mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients.get(id));
-	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients.get(id));
+	mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
+	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
 
 })

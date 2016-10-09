@@ -1,104 +1,26 @@
 var e131 = require('e131');
 
 var _ = require('underscore');
-var EventEmitter = require('events');
-
-/*
-var methods = {
-	add: function(id){
-		clients[id] = {
-			id:id,
-			triggerlevel: 512
-		};
-		settings.save('clients', clients);
-	},
-	set: function(id, state){
-
-		var needsendcolor = (state.color && state.color !== clients[id].color);
-
-		_.extend(clients[id], state);
-
-		clients[id].trigger = (clients[id].val > clients[id].triggerlevel) || clients[id].manualtrigger;
-
-		settings.save('clients', clients);
-
-		if(!e131clients[id]){
-			e131clients[id] = createClientChannel(clients[id]);
-		}
-
-		needsendcolor && e131clients[id](state.color)
-
-	},
-	get: function(id){
-		if(id){
-			return clients[id];
-		}else{
-			return clients;
-		}
-	},
-	reset: function(){
-		clients = {};
-		settings.save('clients', clients);
-	},
-	update: function(state){
-		if(state.pos){
-			console.log(state.id);
-			clients[state.id].pos = state.pos;
-			settings.save('clients', clients);
-		}
-		if(typeof state.manualtrigger !== 'undefined'){
-			clients[state.id].manualtrigger = state.manualtrigger;
-		}
-	},
-	setup: function(options){
-		if(options && options.port){
-			PORT = options.port;
-		}
-	},
-
-	fill: (size, color) {
-		// console.log(universeId+'<'+rgbcolor);
-		for (var idx=0; idx<size; idx++) {
-			_.each(rgbcolor, function(color, colorindex){
-				channelData[idx*3+colorindex] = rgbcolor[colorindex];
-			});
-		}
-	}
-}
+// var EventEmitter = require('events');
 
 
-var clients = {};
-var e131clients = {};
+var DEFAULT_PORT = 5568;
+var DEFAULT_TRIGGERLEVEL = 512;
+var UNIVERSES_SIZE = {
+	inner: 60,
+	outer: 120
+};
 
 
-module.exports = function(id) {
+var settings = require('./settings');
+var clients = settings.read('clients') || {};
 
-	var client = clients[id];
-
-	if(!client){
-		methods.add(id);
-	}
-
-	return {
-		setInnerColor: function(color){ //; задать всем диодам один цвет
-			//взять клиента, его массив
-			client.inner = 
-		},
-		setOuterColor: function(){ //задать всем диодам один цвет
-		},
-		setInnerColors: function(){// - массив цветов, чтобы задавать более сложные сочетания цветов (может лучше через метод, смотри сам)
-		},
-		setOuterColors: function(){// - массив цветов (то же самое)
-		},
-		updateLeds: function(){// - отправляет значения цветов массивов в сеть
-		},
-		getLastVal: function(){// - последние значение датчика …
-		}
-		getID: function(){
-		}
-	}
-}
-*/
+//reset clients
+_.each(clients, function(client, id){
+	delete clients[id].online;
+	delete clients[id].color;
+	delete clients[id].manualtrigger
+});
 
 
 var helpers = {
@@ -149,78 +71,109 @@ var helpers = {
 				// console.log('success sent to '+universeId);
 			});
 		} 
-	},
+	}
 }
 
 module.exports = function(params){
 
-	var DEFAULT_PORT = 5568;
-	var UNVERSES_SIZE = {
-		inner: 60,
-		outer: 120
-	};
+	// if(params)
 
-
-	var settings = require('./settings');
-	var clientsSettings = settings.read('clients') || {};
-	var clients = {};
-
-
-	var PORT = (options && options.port) || DEFAULT_PORT;
+	var PORT = (params && params.port) || DEFAULT_PORT;
 	
+
 	return function(id) {
 
-		var client = clients[id];
+		if(typeof id === 'undefined'){
+			return {
+				get: function(){
+					return clients;
+				},
+				reset: function(){
+					clients = {};
+					settings.save('clients', clients);
+				}
+			}
+		} else {
 
-		if(!client){
-			client = {id: id};
-			clients[id] = client;
+			var newclient = false;
+
+
+			var client = clients[id];
+			if(!client){
+				newclient = true;
+
+				clients[id] = {
+					id: id,
+					triggerlevel: DEFAULT_TRIGGERLEVEL
+				};
+				settings.save('clients', clients);
+
+				client = clients[id];
+			}
+
+			var api = {
+				set: function(state){
+
+					_.extend(client, state);
+
+					client.trigger = (client.val > client.triggerlevel) || client.manualtrigger;
+
+					settings.save('clients', clients);
+
+					return clients[id];
+				},
+				get: function(){
+					return client;
+				}, 
+				// обработка нового состояния клиента
+				handleMessage: function(data, cb) {
+
+					helpers.set(id, {
+						val: data.val,
+						ip: data.ip,
+						lastdgram: +(new Date()),
+						online: true
+					});
+
+					cb && cb({newclient: newclient})
+				},
+				// задать всем диодам один цвет
+				setInnerColor: function(color){
+					client.innerColors = helpers.fillByColor(UNIVERSES_SIZE['inner'], color);
+				},
+				// задать всем диодам один цвет
+				setOuterColor: function(){
+					client.outerColors = helpers.fillByColor(UNIVERSES_SIZE['outer'], color);
+				},
+				// массив цветов, чтобы задавать более сложные сочетания цветов (может лучше через метод, смотри сам)
+				setInnerColors: function(colors){
+					client.innerColors = _.flatten(colors);
+				},
+				// массив цветов (то же самое)
+				setOuterColors: function(colors){
+					client.outerColors = _.flatten(colors);
+				},
+				// отправляет значения цветов массивов в сеть
+				updateLeds: function(){
+
+					if(!client.send){
+						client.send = helpers.createClientChannels(client, PORT, UNIVERSES_SIZE);
+					}
+
+					client.send();
+				},
+				// последние значение датчика
+				getLastVal: function(){
+					return client.val;
+				},
+				getID: function(){
+					return id;
+				}
+			};
+
+			return api;
+
 		}
 
-		_.extend(client.api, new EventEmitter());
-
-		client.api = {
-			// обработка нового состояния клиента
-			handleMessage: function(data) {
-
-			},
-			// задать всем диодам один цвет
-			setInnerColor: function(color){
-				client.innerColors = helpers.fillByColor(UNVERSES_SIZE['inner'], color);
-			},
-			// задать всем диодам один цвет
-			setOuterColor: function(){
-				client.outerColors = helpers.fillByColor(UNVERSES_SIZE['outer'], color);
-			},
-			// массив цветов, чтобы задавать более сложные сочетания цветов (может лучше через метод, смотри сам)
-			setInnerColors: function(colors){
-				client.innerColors = _.flatten(colors);
-			},
-			// массив цветов (то же самое)
-			setOuterColors: function(colors){
-				client.outerColors = _.flatten(colors);
-			},
-			// отправляет значения цветов массивов в сеть
-			updateLeds: function(){
-
-				if(!client.connector){
-					// client.connector = helpers.createConnector();
-					// var e131Client = new e131.Client(client.ip, PORT);
-					client.send = helpers.createClientChannels(client, PORT, UNVERSES_SIZE);
-				}
-
-				client.send();
-			},
-			// последние значение датчика
-			getLastVal: function(){
-				return client.val;
-			},
-			getID: function(){
-				return id;
-			}
-		};
-
-
-		return client.api;
 	}
 }
