@@ -71,11 +71,13 @@ var udpserver = UdpServer({
 	host: selfip.get(params.get('iface')).address,
 	port: CLIENTS_PORT,
 	onmessage: function(args){
+
 		
 		var ip = args.ip;
 		var id = args.id;
 		var val = args.val;
 
+		clients(args.id).handleMessage(args);
 
 		
 		var currDate = +(new Date());
