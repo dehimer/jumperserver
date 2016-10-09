@@ -123,6 +123,7 @@ colorgenerator.start(params.get('fps'), function sendColor(color, clientId){
 		var colorToSend = client.trigger?[255,255,255]:color; 
 		// clients(id).set({color: colorToSend});
 		clients(id).setOuterColor(colorToSend);
+		clients(id).setInnerColor(colorToSend.reverse());
 		clients(id).updateLeds();
 
 		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());

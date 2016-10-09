@@ -18,7 +18,8 @@ var clients = settings.read('clients') || {};
 //reset clients
 _.each(clients, function(client, id){
 	delete clients[id].online;
-	delete clients[id].color;
+	delete clients[id].outerColors;
+	delete clients[id].innerColors;
 	delete clients[id].manualtrigger
 });
 
@@ -31,6 +32,7 @@ var helpers = {
 				colors[i*3+colorindex] = rgbcolor[colorindex];
 			});
 		}
+		return colors;
 	},
 	createClientChannels: function (client, port, sizes) {
 
@@ -44,6 +46,7 @@ var helpers = {
 	 	var universe_inner = (helpers.createUniverseClient)(sizes.inner, e131Client, 2);
 
 	 	return function(){
+	 		console.log('send');
 	 		universe_outer(client.outerColors);
 	 		universe_inner(client.innerColors);
 	 	}
@@ -109,7 +112,7 @@ module.exports = function(params){
 			var client = clients[id];
 			if(!client){
 				newclient = true;
-				console.log('add '+id);
+				// console.log('add '+id);
 				clients[id] = {
 					id: id,
 					triggerlevel: DEFAULT_TRIGGERLEVEL

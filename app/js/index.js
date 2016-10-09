@@ -108,8 +108,8 @@ function renderClients(event, data){
         // console.log(pos);
         // alert(idx+':'+client.id);
         markup += '<div class="clients__client" data-idx="'+idx+'" data-id="'+client.id+'" style="left:'+pos[0]+'px;top:'+pos[1]+'px;">';
-            markup += '<div class="clients__client_color clients__client_color--big">';
-                markup += '<div class="clients__client_color clients__client_color--small">';
+            markup += '<div class="clients__client_color clients__client_color--outer">';
+                markup += '<div class="clients__client_color clients__client_color--inner">';
                     markup += '<div class="clients__client_id">'+client.id+'</div>';
                     markup += '<div class="clients__client_ip">'+client.ip+'</div>';
                     markup += '<div class="clients__client_val">'+client.val+'</div>';
@@ -181,10 +181,16 @@ function updateClient(event, client){
         clientEl.removeClass('clients__client--active');
     }
 
-    if(client.color) {
-        clientEl.find('.clients__client_color').css('background-color', 'rgb('+client.color.join(',')+')');
+    if(client.innerColors) {
+        clientEl.find('.clients__client_color--inner').css('background-color', 'rgb('+client.innerColors.slice(0, 3).join(',')+')');
     }else{
-        clientEl.find('.clients__client_color').css('background-color', 'transparent');
+        clientEl.find('.clients__client_color--inner').css('background-color', 'transparent');
+    }
+
+    if(client.outerColors) {
+        clientEl.find('.clients__client_color--outer').css('background-color', 'rgb('+client.outerColors.slice(0, 3).join(',')+')');
+    }else{
+        clientEl.find('.clients__client_color--outer').css('background-color', 'transparent');
     }
     
 
