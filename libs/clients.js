@@ -74,7 +74,7 @@ var helpers = {
 
 			}
 			// console.log(size);
-			console.log(channelData);
+			// console.log(channelData);
 			// console.log('get:'+packet.getUniverse());
 			e131Client.send(packet, function () {
 				// console.log('success sent to '+universeId);

@@ -181,13 +181,13 @@ function updateClient(event, client){
         clientEl.removeClass('clients__client--active');
     }
 
-    if(client.innerColors) {
+    if(client.online && client.innerColors) {
         clientEl.find('.clients__client_color--inner').css('background-color', 'rgb('+client.innerColors.slice(0, 3).join(',')+')');
     }else{
         clientEl.find('.clients__client_color--inner').css('background-color', 'transparent');
     }
 
-    if(client.outerColors) {
+    if(client.online && client.outerColors) {
         clientEl.find('.clients__client_color--outer').css('background-color', 'rgb('+client.outerColors.slice(0, 3).join(',')+')');
     }else{
         clientEl.find('.clients__client_color--outer').css('background-color', 'transparent');

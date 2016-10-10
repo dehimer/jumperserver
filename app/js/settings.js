@@ -83,6 +83,7 @@ ipc.on('settings-panel:selected-client-params', function(event, clientParams) {
         currentClientEl.removeClass('settings__current-client--hidden');
         $('.settings__current-client-val').html(clientParams.val);
         $('.settings__trigger-level').html(clientParams.triggerlevel);
+        triggerlevelEl.val(clientParams.triggerlevel);
         
     }else{
         currentClientEl.addClass('settings__current-client--hidden');

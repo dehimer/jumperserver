@@ -83,9 +83,9 @@ var udpserver = UdpServer({
 			//send new state
 			mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 
-			if(+selectedClientId === +id){
-				mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
-			}
+			// if(+selectedClientId === +id){
+			// 	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
+			// }
 
 
 			//check offline
@@ -95,8 +95,8 @@ var udpserver = UdpServer({
 		    clearTimeout(offlineTimeouts[id]);
 		    offlineTimeouts[id] = setTimeout(function(){
 		        if(clients(id).get()){
-		        	// console.log(id+' is timeout');
-		        	clients(id).set({online: false, color: undefined});
+		        	console.log(id+' is timeout');
+		        	clients(id).set({online: false});
 		        }
 		        mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 		    }, params.get('offlinetimeout'));
@@ -168,6 +168,7 @@ ipc.on('settings-panel:params', function (event, newParams) {
 
 ipc.on('clients-panel:selected-client', function(event, id) {
 	selectedClientId = id;
+	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
 })
 
 ipc.on('settings-panel:current-client-change-level', function(event, level) {
