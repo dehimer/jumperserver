@@ -212,5 +212,5 @@ ipc.on('settings-panel:calc-trigger-level', function(event) {
 			mainWindow.webContents.send('settings-panel:selected-client-params', client.get());
 			mainWindow.webContents.send('settings-panel:new-trigger-level');
 		}
-	}, 10000);
+	}, 5000);
 });
