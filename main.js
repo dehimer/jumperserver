@@ -20,6 +20,7 @@ var clients = require('./libs/clients')({port:COLORS_PORT});
 var lightHouse = require('./libs/lighthouse');
 var selfip = require('./libs/selfip');
 var params = require('./libs/params');
+var games = require('./libs/games')(clients);
 
 var mainWindow = null;
 
