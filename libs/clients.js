@@ -1,7 +1,7 @@
 var e131 = require('e131');
 
 var _ = require('underscore');
-// var EventEmitter = require('events');
+var Events = require('events');
 
 
 var DEFAULT_PORT = 5568;
@@ -17,6 +17,7 @@ var clients = settings.read('clients') || {};
 
 //reset clients
 _.each(clients, function(client, id){
+	delete clients[id].api;
 	delete clients[id].online;
 	delete clients[id].outerColors;
 	delete clients[id].innerColors;
@@ -46,7 +47,7 @@ var helpers = {
 	 	var universe_inner = (helpers.createUniverseClient)(sizes.inner, e131Client, 2);
 
 	 	return function(){
-	 		console.log('send');
+	 		// console.log('send');
 	 		universe_outer(client.outerColors);
 	 		universe_inner(client.innerColors);
 	 	}
@@ -121,82 +122,93 @@ module.exports = function(params){
 
 				client = clients[id];
 			}
+			// console.log(client);
+			if(typeof client.api === 'undefined'){
+				var api = {};
+				// console.log(new Events.EventEmitter());
+				_.extend(api, new Events.EventEmitter());
+				_.extend(api, {
+					set: function(state){
+						// console.log(state);
 
-			var api = {
-				set: function(state){
-					// console.log(state);
+						_.extend(client, state);
 
-					_.extend(client, state);
+						client.trigger = (client.val > client.triggerlevel) || client.manualtrigger;
 
-					client.trigger = (client.val > client.triggerlevel) || client.manualtrigger;
-
-					// console.log(client);
-					settings.save('clients', clients);
-					
-					// clients[id] = client;
-					
-					return client;
-				},
-				get: function(){
-					return client;
-				},
-				update: function(state){
-					if(state.pos){
-						// console.log(state.id);
-						clients[state.id].pos = state.pos;
+						// console.log(client);
 						settings.save('clients', clients);
+						
+						// clients[id] = client;
+						
+						return client;
+					},
+					get: function(){
+						return client;
+					},
+					update: function(state){
+						if(state.pos){
+							// console.log(state.id);
+							clients[state.id].pos = state.pos;
+							settings.save('clients', clients);
+						}
+						if(typeof state.manualtrigger !== 'undefined'){
+							clients[state.id].manualtrigger = state.manualtrigger;
+						}
+					},
+					// обработка нового состояния клиента
+					handleMessage: function(data, cb) {
+						// console.log('handle');
+						this.set({
+							val: data.val,
+							ip: data.ip,
+							lastdgram: +(new Date()),
+							online: true
+						});
+						// console.log('val', client.val);
+						this.emit('val', client.val);
+
+						cb && cb(null, {newclient: newclient})
+					},
+					// задать всем диодам один цвет
+					setInnerColor: function(color){
+						client.innerColors = helpers.fillByColor(UNIVERSES_SIZE['inner'], color);
+					},
+					// задать всем диодам один цвет
+					setOuterColor: function(color){
+						client.outerColors = helpers.fillByColor(UNIVERSES_SIZE['outer'], color);
+					},
+					// массив цветов, чтобы задавать более сложные сочетания цветов (может лучше через метод, смотри сам)
+					setInnerColors: function(colors){
+						client.innerColors = _.flatten(colors);
+					},
+					// массив цветов (то же самое)
+					setOuterColors: function(colors){
+						client.outerColors = _.flatten(colors);
+					},
+					// отправляет значения цветов массивов в сеть
+					updateLeds: function(){
+
+						if(!client.send){
+							client.send = helpers.createClientChannels(client, PORT, UNIVERSES_SIZE);
+						}
+
+						client.send();
+					},
+					// последние значение датчика
+					getLastVal: function(){
+						return client.val;
+					},
+					getID: function(){
+						return id;
 					}
-					if(typeof state.manualtrigger !== 'undefined'){
-						clients[state.id].manualtrigger = state.manualtrigger;
-					}
-				},
-				// обработка нового состояния клиента
-				handleMessage: function(data, cb) {
-					// console.log('handle');
-					this.set({
-						val: data.val,
-						ip: data.ip,
-						lastdgram: +(new Date()),
-						online: true
-					});
+				});
 
-					cb && cb(null, {newclient: newclient})
-				},
-				// задать всем диодам один цвет
-				setInnerColor: function(color){
-					client.innerColors = helpers.fillByColor(UNIVERSES_SIZE['inner'], color);
-				},
-				// задать всем диодам один цвет
-				setOuterColor: function(color){
-					client.outerColors = helpers.fillByColor(UNIVERSES_SIZE['outer'], color);
-				},
-				// массив цветов, чтобы задавать более сложные сочетания цветов (может лучше через метод, смотри сам)
-				setInnerColors: function(colors){
-					client.innerColors = _.flatten(colors);
-				},
-				// массив цветов (то же самое)
-				setOuterColors: function(colors){
-					client.outerColors = _.flatten(colors);
-				},
-				// отправляет значения цветов массивов в сеть
-				updateLeds: function(){
-
-					if(!client.send){
-						client.send = helpers.createClientChannels(client, PORT, UNIVERSES_SIZE);
-					}
-
-					client.send();
-				},
-				// последние значение датчика
-				getLastVal: function(){
-					return client.val;
-				},
-				getID: function(){
-					return id;
-				}
-			};
-
-			return api;
+				client.api = api;
+				
+			}
+			// console.log(api.on);
+			// console.log(client.api);
+			return client.api;
 
 		}
 

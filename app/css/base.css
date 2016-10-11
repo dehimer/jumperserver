@@ -11,7 +11,7 @@ body {
     top:0px;
     width: 100vw;
     height: 45px;
-    -webkit-app-region: drag;
+    -webkit-app-region: drag;f
     -webkit-user-select: none;
     background-color: rgba(0,0,0,0.1);
 }
@@ -143,7 +143,8 @@ body {
 
 .settings__accept-params,
 .settings__reset,
-.settings__iface-button {
+.settings__iface-button,
+.settings__calc-trigger-level {
     margin-top: 15px;
     width: 100%;
 }
@@ -162,4 +163,18 @@ body {
 
 .settings__trigger-level {
     text-align: center;    
+}
+
+.settings__calc-trigger-level .settings__calc-trigger-level-default-text {
+    display: block;
+}
+.settings__calc-trigger-level .settings__calc-trigger-level-busy-text {
+    display: none;
+}
+
+.settings__calc-trigger-level--active .settings__calc-trigger-level-default-text {
+    display: none;
+}
+.settings__calc-trigger-level--active .settings__calc-trigger-level-busy-text {
+    display: block;
 }

@@ -22,6 +22,7 @@ resetEl.bind('click', function (e) {
 
 var triggerlevelEl = $('.settings__trigger-level-slider');
 var offlinetimeoutEl = $('.settings__offline-timeout')
+var calcTrigLevel = $('.settings__calc-trigger-level');
 
 acceptParamsEl.bind('click', function (e) {
     
@@ -31,6 +32,18 @@ acceptParamsEl.bind('click', function (e) {
     }
     ipc.send('settings-panel:params', params);
 });
+
+calcTrigLevel.bind('click', function(){
+
+    calcTrigLevel.addClass('settings__calc-trigger-level--active');
+
+    ipc.send('settings-panel:calc-trigger-level');
+});
+
+ipc.on('settings-panel:new-trigger-level', function(event, level) {
+    calcTrigLevel.removeClass('settings__calc-trigger-level--active');
+});
+
 
 ipc.send('settings-panel:ready');
 

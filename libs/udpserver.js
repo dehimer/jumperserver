@@ -12,11 +12,11 @@ function runServer(port, host, handler){
 
 	server.on('message', function (data, remote) {
 
-		console.log('message');
+		// console.log('message');
 
 		var ip = remote.address;
 
-		console.log(host, ip);
+		// console.log(host, ip);
 
 		var data = (data+'').split(' ');
 		var id = data[0];

@@ -44,8 +44,14 @@
                     <!-- <input type="text" class="form-control input settings__trigger-level"> -->
                     <input type="range" min="0" max="1024" step="1" data-orientation="vertical" class="input settings__trigger-level-slider">
                     <div class="settings__trigger-level"></div>
+                    
                     <div class="label">Текущее значение:</div>
                     <div class="settings__current-client-val"></div>
+
+                    <button type="button" class="settings__calc-trigger-level btn btn-default btn-md">
+                        <span class="settings__calc-trigger-level-default-text">Калибровка порога</span>
+                        <span class="settings__calc-trigger-level-busy-text">Идёт калибровка</span>
+                    </button>
                 </div>
 
 

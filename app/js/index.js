@@ -112,7 +112,7 @@ function renderClients(event, data){
                 markup += '<div class="clients__client_color clients__client_color--inner">';
                     markup += '<div class="clients__client_id">'+client.id+'</div>';
                     markup += '<div class="clients__client_ip">'+client.ip+'</div>';
-                    markup += '<div class="clients__client_val">'+client.val+'</div>';
+                    markup += '<div class="clients__client_val">'+client.val+'/'+client.triggerlevel+'</div>';
                 markup += '</div>';
             markup += '</div>';
         markup += '</div>';

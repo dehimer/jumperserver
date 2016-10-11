@@ -23,7 +23,7 @@ var params = require('./libs/params');
 
 var mainWindow = null;
 
-const mainWindowSizes = [500, 800];
+const mainWindowSizes = [540, 800];
 
 app.on('ready', function() {
 
@@ -169,7 +169,7 @@ ipc.on('settings-panel:params', function (event, newParams) {
 ipc.on('clients-panel:selected-client', function(event, id) {
 	selectedClientId = id;
 	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
-})
+});
 
 ipc.on('settings-panel:current-client-change-level', function(event, level) {
 
@@ -183,4 +183,34 @@ ipc.on('settings-panel:current-client-change-level', function(event, level) {
 	mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
 
-})
+});
+
+ipc.on('settings-panel:calc-trigger-level', function(event) {
+	
+	var client = clients(selectedClientId);
+	var vals = [];
+	var processNextVal = function (val) {
+		vals.push(val);
+		// console.log('processNextVal '+val);
+	};
+	client.on('val', processNextVal);
+	setTimeout(function(){
+
+		var res = 10;
+		if(vals.length){
+			var sum = _.reduce(vals, function(buf, nextval) {
+				return buf+nextval;
+			}, 0);
+			res += Math.floor(sum/vals.length);
+		}
+		// console.log(res);
+		client.set({triggerlevel:res})
+		// clients(id).calcLevel(false);
+		client.removeListener('val', processNextVal);
+		if(mainWindow){
+			mainWindow.webContents.send('clients-panel:update-clients', client.get());
+			mainWindow.webContents.send('settings-panel:selected-client-params', client.get());
+			mainWindow.webContents.send('settings-panel:new-trigger-level');
+		}
+	}, 10000);
+});
