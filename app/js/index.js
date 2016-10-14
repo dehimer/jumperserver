@@ -51,7 +51,7 @@ ipc.on('clients-panel:params', function(event, newParams){
 });
 */
 ipc.on('clients-panel:clients', renderClients);
-ipc.on('clients-panel:update-clients', updateClient);
+ipc.on('clients-panel:update-client', updateClient);
 
 
 
@@ -166,7 +166,7 @@ function renderClients(event, data){
 }
 
 function updateClient(event, client){
-
+    console.log(client);
     var clientEl = clientsContentEl.find('.clients__client[data-id="'+client.id+'"]');    
 
     if(client.online){

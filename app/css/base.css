@@ -89,6 +89,7 @@ body {
 
 .clients__client--active {
     background-color: white;
+    color: black;
 }
 
 .clients__client--selected {
@@ -115,7 +116,7 @@ body {
     font-size: 22px;
     text-align: center;
     /*padding-top: 0px;*/
-    color: white;
+    /*color: white;*/
 }
 
 .clients__client_ip {

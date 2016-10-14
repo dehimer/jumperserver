@@ -33,25 +33,39 @@ function HSVtoRGB(h, s, v) {
 }
 
 
-var fps = 60;
-var hue = 0;
-var currentColor = genColor(hue);
-var cb;
 
-var tick = function(){
-    var delay = 1000/fps;
-    hue = (hue+1)%360;
-    currentColor = genColor(hue);
-    cb && cb(currentColor);
-    setTimeout(tick, delay);
-}
 
-exports.start = function(newfps, newcb) {
-    fps = newfps;
-    cb = newcb;
-    tick(cb);
-}
+module.exports = function(args){
 
-exports.setFPS = function(newfps) {
-    fps = newfps;
+    var can = args.can;
+    var fps = args.fps;
+    var stop = function(){};
+
+    can.on('params:changed', function(args) {
+        if(args.fps !== fps){
+            fps = args.fps;
+        }
+    });
+
+    can.on('color:change_regim', function(regim){
+        stop();
+
+        if(regim === 'hue'){
+            var hue = 0;
+            var currentColor = genColor(hue);
+            var delay = 1000/fps;
+            
+            var intF = setInterval(function(){
+                
+                hue = (hue+1)%360;
+                
+                currentColor = genColor(hue);
+                can.emit('color:new', currentColor);
+            }, delay);
+
+            stop = function() {
+                clearInterval(intF);
+            }
+        }
+    });
 }

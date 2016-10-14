@@ -7,20 +7,25 @@ var CLIENTS_PORT = 5567;
 var _ = require('underscore');
  
 //electron libs
+var Events = require('events');
 var electron = require('electron');
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
 var ipc = electron.ipcMain;
 
+var can = new Events.EventEmitter();
+
 //self written libs
 var settings = require('./libs/settings');
+var params = require('./libs/params')({can:can});
 var UdpServer = require('./libs/udpserver');
-var colorgenerator = require('./libs/colorgenerator');
-var clients = require('./libs/clients')({port:COLORS_PORT});
+var clients = require('./libs/clients')({port:COLORS_PORT, can:can});
 var lightHouse = require('./libs/lighthouse');
 var selfip = require('./libs/selfip');
-var params = require('./libs/params');
-var games = require('./libs/games')(clients);
+var colorgenerator = require('./libs/colorgenerator')({can:can, fps:params.get().fps});
+var games = require('./libs/games')({can:can, clients:clients});
+
+
 
 var mainWindow = null;
 
@@ -81,9 +86,6 @@ var udpserver = UdpServer({
 				mainWindow && mainWindow.webContents.send('clients-panel:clients', clients().get());
 			}
 
-			//send new state
-			mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
-
 			// if(+selectedClientId === +id){
 			// 	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
 			// }
@@ -94,12 +96,12 @@ var udpserver = UdpServer({
 				offlineTimeouts[id] = {};
 			}
 		    clearTimeout(offlineTimeouts[id]);
+		    // console.log(params.get('offlinetimeout'));
 		    offlineTimeouts[id] = setTimeout(function(){
 		        if(clients(id).get()){
-		        	console.log(id+' is timeout');
+		        	// console.log(id+' is timeout');
 		        	clients(id).set({online: false});
 		        }
-		        mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 		    }, params.get('offlinetimeout'));
 
 		});
@@ -107,30 +109,6 @@ var udpserver = UdpServer({
 	}
 })
 
-
-colorgenerator.start(params.get('fps'), function sendColor(color, clientId){
-
-	var targetClients = _.filter(clients().get(), function(client){
-		return client.online && ((typeof clientId === 'undefined') || client.id === clientId);
-	});
-
-	color = [color.r, color.g, color.b];
-
-	// console.log(targetClients);
-	//indicate color
-	_.each(targetClients, function(client){
-		// console.log(client);
-		var id = client.id;
-		var colorToSend = client.trigger?[255,255,255]:color; 
-		// clients(id).set({color: colorToSend});
-		clients(id).setOuterColor(colorToSend);
-		clients(id).setInnerColor(colorToSend.reverse());
-		clients(id).updateLeds();
-
-		mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
-
-	});
-});
 
 var lighthouse = new lightHouse({
 	bip: selfip.get(params.get('iface')).broadcast,
@@ -145,7 +123,6 @@ ipc.on('settings-panel:change-iface', function(event, iface) {
 	params.set('ip', selfip.get(iface).address);
 	lighthouse.setBroadcastIP(selfip.get(params.get('iface')).broadcast);
 	udpserver.setIP(selfip.get(iface).address);
-	mainWindow.webContents.send('params', params.get());
 });
 
 
@@ -155,16 +132,14 @@ ipc.on('reset', function () {
 	params.reset();
 	lighthouse.setBroadcastIP(null);
 	udpserver.setIP(null);
-	colorgenerator.setFPS(params.get('fps'));
+	// colorgenerator.setFPS(params.get('fps'));
     mainWindow.webContents.send('clients-panel:clients', clients().get());
-    mainWindow.webContents.send('params', params.get());
     mainWindow.webContents.send('settings-panel:selected-client-params', false);
 });
 
 ipc.on('settings-panel:params', function (event, newParams) {
 	params.set(newParams)
-	colorgenerator.setFPS(params.get('fps'));
-	mainWindow.webContents.send('params', params.get());
+	// colorgenerator.setFPS(params.get('fps'));
 });
 
 ipc.on('clients-panel:selected-client', function(event, id) {
@@ -180,8 +155,6 @@ ipc.on('settings-panel:current-client-change-level', function(event, level) {
 	});
 
 
-	//send new state
-	mainWindow && mainWindow.webContents.send('clients-panel:update-clients', clients(id).get());
 	mainWindow && mainWindow.webContents.send('settings-panel:selected-client-params', clients(id).get());
 
 });
@@ -209,9 +182,16 @@ ipc.on('settings-panel:calc-trigger-level', function(event) {
 		// clients(id).calcLevel(false);
 		client.removeListener('val', processNextVal);
 		if(mainWindow){
-			mainWindow.webContents.send('clients-panel:update-clients', client.get());
 			mainWindow.webContents.send('settings-panel:selected-client-params', client.get());
 			mainWindow.webContents.send('settings-panel:new-trigger-level');
 		}
 	}, 5000);
+});
+
+can.on('params.changed', function(newParams) {
+	mainWindow.webContents.send('params', newParams);
+});
+
+can.on('client:changed', function(client){
+	mainWindow && mainWindow.webContents.send('clients-panel:update-client', client);
 });

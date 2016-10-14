@@ -48,6 +48,7 @@ var helpers = {
 
 	 	return function(){
 	 		// console.log('send');
+	 		// console.log(id+':'+client.outerColors.join(','));
 	 		universe_outer(client.outerColors);
 	 		universe_inner(client.innerColors);
 	 	}
@@ -86,7 +87,7 @@ var helpers = {
 
 module.exports = function(params){
 
-	// if(params)
+	var can = params.can;
 
 	var PORT = (params && params.port) || DEFAULT_PORT;
 	
@@ -133,13 +134,19 @@ module.exports = function(params){
 
 						_.extend(client, state);
 
-						client.trigger = (client.val > client.triggerlevel) || client.manualtrigger;
+						var oldTrigger = client.trigger;
+						client.trigger = (client.val > client.triggerlevel) || client.manualtrigger || false;
+						
+						if(oldTrigger != client.trigger){
+							can.emit('client:changed', client);
+						};
+
 
 						// console.log(client);
 						settings.save('clients', clients);
 						
 						// clients[id] = client;
-						
+						can.emit('client:changed', client);
 						return client;
 					},
 					get: function(){
